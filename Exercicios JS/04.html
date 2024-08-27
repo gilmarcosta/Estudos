@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu primeiro programa...</title>
+    <style> /*comentario em CSS*/
+        body{
+            background-color: rgb(105,105,173);
+            color: white;
+            font: normal 15pt Arial;
+        }
+        h1{
+            color: rgb(255, 255, 255);
+        }
+    </style>
+</head>
+<body>
+    <h1>Iniciando os estudos em DOM</h1>
+    <p>Aqui vai o resultado</p>
+    <p>Aprendendo a usar o <strong>DOM</strong> em JavaScript</p>
+    <p>Clique em mim</p>
+
+    <div id="msg"> clique em mim</div>
+    <script>
+
+        var corpo = window.document.body 
+
+        window.document.write('Olá mundo ') //uma maneira de adicionar componentes, não é a melhor maneira
+        window.document.write(window.document.charset)//mostra o padrao utilizado
+        
+        window.document.write(window.navigator.appName) // mostra o navegador
+
+        window.document.write(window.document.URL) // a url que estou utilizando
+
+        var p1 = window.document.getElementsByTagName('p')[1]
+
+        window.document.write(p1.innerText) // inner Text é o texto que está dentro de p1
+
+        p1.style.color = 'blue'
+        corpo.style.background = 'black'
+
+        window.document.write(p1.innerText)
+
+        document.write(p1.innerText)
+
+        window.document.write(p1.innerHTML) //Diferente do innerText, o texto vem formatado, com as tags filhas
+
+        //window.alert(p1.innerHTML)
+
+
+        var d = window.document.getElementById('msg')
+
+        d.style.background = 'green'
+        d.innerText='Estou Aqui'
+
+        var f = window.document.querySelector('div#msg')
+
+
+        f.style.background = 'blue'
+
+    </script>
+</body>
+</html>
