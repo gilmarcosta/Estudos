@@ -2,6 +2,7 @@
 header{
     background-color: brown;
     height: 100px;
+    width: auto;
     margin-bottom: 10px;
     margin-top: -20px;
 }
@@ -44,4 +45,5 @@ footer{
     position: sticky;
     height: 100px;
     margin-top: 10px;
+    width: auto;
 }
