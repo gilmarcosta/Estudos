@@ -14,7 +14,7 @@ p.formato{
     color: white;
 }
 
-body{
+html,body{
     height: 100vh;
 }
 
