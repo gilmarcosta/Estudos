@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="estilo.css">
+    <title>Descobrir Mês</title>
+</head>
+    <body>
+        <header>
+            <div>
+                <p class="formato">FUNÇÃO PARA DEFINIR O MÊS</p>
+            </div>
+        </header>
+
+        <section>
+            <div class="codigo">
+
+            <p>Por exemplo: como entrada temos o valor 30 de setembro de 2023,logo chamamos a função com três parâmetros:
+            Vetor, a string e o tamanho máximo da string, sendo assim: string(datU,"20/setembro/2024",20); </p>
+            <p>
+                <code>
+                    <pre>
+                        //declarar a função
+
+                        void string(char *pont, char *nome,int qnt);
+
+                        // para inserir uma string em um vetor de char 
+                                      //(vetor,string,tamanho da string) 
+
+                        void string(char *pont, char *nome,int qnt){ 
+                            int i;
+                            for(i=0;i < qnt ;i++){
+                                pont[i] = nome[i];
+                            }
+                        };
+                    </pre>
+                </code>
+            </p>
+
+                <p>Exemplo: (01/janeiro/2000) terceira posição do vetor é j, ele irá verificar a terceira posição do vetor, a variável ind recebe 3 porque na situação do exemplo ele verifica a partir do 3° elemento do vetor</p>
+                <p>Caso verifique apenas o mês, (janeiro), a variável ind será 0</p>
+
+                <p><pre>
+                    Se começar com J, pode ser janeiro,junho ou julho
+                    Se segundo tiver o elemento a, é janeiro
+                    Senão
+                        Se terceiro elemento for n, é junho
+                        Senao, é julho
+                    Assim sucessivamente
+                </pre>
+                </p>
+                <p>data[ ] é um vetor de caracteres, onde o tamanho será definido lá na função principal</p>
+                </p>
+                <code>
+                    <pre>
+
+                    int verifica(char datI[]);    //Declarar a função
+
+                    
+                    int verifica(char data[]){   //Função
+	                int mes = 0, ind = 3;   
+                    if(data[ind] == 'j'){
+                        if(data[ind+1] == 'a'){
+                            mes = 1;
+                        }else{
+                            if(data[ind+2] == 'n'){
+                                mes =  6;
+                             else{
+                                 mes = 7;
+                             }
+                        }
+                    }else{	
+                        if(data[ind] == 'f'){
+                            mes = 2;
+                        }else{
+                            if(data[ind] == 'm'){
+                                if(data[ind+2]=='r'){
+                                    mes = 3;
+                                }else{
+                                    mes = 5;
+                                }
+                            }else{
+                                if(data[ind] == 'a'){
+                                    if(data[ind+1]=='b'){
+                                        mes = 4;
+                                    }else{
+                                        mes = 8;
+                                    }
+                                }else{
+                                    if(data[ind] == 's'){
+                                        mes = 9;
+                                    }else{
+                                        if(data[ind] == 'o'){
+                                            mes = 10;
+                                        }else{
+                                            if(data[ind] == 'n'){
+                                                mes = 11;
+                                            }else{
+                                                if(data[ind] == 'd'){
+                                                    mes = 12;
+                                                }
+                                                else{
+                                                    printf("Não enontrado");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return mes;
+                }
+                    </pre>
+                </code>
+            </div>
+        </section>
+
+        <footer>
+            <p class="formato">FUNÇÃO PARA DEFINIR O MÊS</p>
+        </footer>
+    </body>
+</html>
