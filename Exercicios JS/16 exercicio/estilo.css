@@ -1,11 +1,17 @@
 body{
     background-color: rgb(146, 146, 241);
     font-family: normal, 15pt arial;
+    
 }
 
 header{
     color: white;
     text-align: center;
+}
+
+select#res{
+    height: 150px;
+    width: 150px;
 }
 
 section{
@@ -22,3 +28,4 @@ footer{
     text-align: center;
     font-size: italic;
 }
+
