@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Função</title>
+    <link rel="stylesheet" href="../estilo.css">
+</head>
+    <body>
+        <Header>
+            <p class="formato">Função para investimentos</p>
+        </Header>
+        
+        <section>
+            <div class="codigo">
+            <p>A lógica usada é a seguinte:</p>
+            <p>Existe um investidor que irá realizar uma compra de um determinado ativo</p>
+            <p>Poderá fazer uma nova compra o mesmo investidor ou outro, se for o mesmo investidor poderá ser uma compra mas do mesmo ativo ou não, se for o mesmo ativo só atualiza os campos. </p>
+            <p>Logo definimos três estruturas: investidor, ativos e data (a estrutura <strong>data</strong> utilizaremos para compra e para recibos de dividendos)</p>
+            <p>
+                <code>
+                    <pre>
+                        struct acoes{  <strong class="comit">criado para listar os ativos de 
+                            cada usuario (nome do ativo, quantidade, valor total investido 
+                            no ativo, total de proventos recebidos)</strong>
+                            char ativo[6];
+                            float qnt;
+                            float valorinvest;
+                            float proventos; //novo
+                            struct acoes *prox;
+                        };
+                        
+                        struct dataCom{  <strong class="comit">criado para listar as datas 
+                            das compras e as datas de proventos pagos (data da compra/recibo,
+                             nome do investidor e do ativo, preco pago ou valor recebido, 
+                             quantidade de papeis comprado)</strong>
+                            char data[20];
+                            char nome[10];
+                            char ativo[6];
+                            float preco;
+                            float qnt;
+                            struct dataCom *prox;
+                        };
+                        
+                        struct investidor{ <strong class="comit">criado para listar os 
+                            investidores  (nome do investidor, valor total do capital 
+                            do investidor )</strong>
+                            char nome[10];
+                            float valor;
+                            struct acoes *aprox;
+                            struct investidor *prox; 
+                        };
+                    </pre>
+                </code>
+            </p>
+            <p>Será criada uma lista onde cada célula aponta para a outra e cada célula será uma estrutura (variável composta). Como no início não existe ainda nenhuma célula, o primeiro item da lista é nullo (NULL)</p>
+            <p>Essa e a função que irá inserir os dados, nome do investidor, capital investido, o nome do ativo, preço do ativo e data da compra respectivamente!! Sendo os dois primeiros parâmetros a estrutura investidor (investidor atual) e a estrutura dataCom (data da compra).</p>
+            <p>Note que sempre que houver uma compra, sempre terá uma data, sendo ela a mesma data ou não, logo sempre adicionamos uma nova célula data ("dataCom")</p>
+            <p>Já o investidor, sempre que fizer uma compra, temos que verificar se já existe algum investidor, se o investidor é o mesmo,(aqui entra uma outra função para auxiliar que está no final do texto) caso seja, ele não cria uma célula, ele so adiciona campos ou atualiza os campos</p>
+            <p>
+                <code>
+                    <pre>
+                        void investimento(struct investidor *in, 
+                        struct dataCom *c, char *nome, float valor, 
+                        char *ativo, float preco, char *data){
+	
+                            int res=0;
+                            struct acoes *a;
+                            
+                            if((*in).nome[0] == '\0'){
+                        
+                                string((*in).nome,nome,10);     <strong class="comit">insere o nome na celula</strong>
+                                (*in).valor += valor;
+                                (*in).aprox = NULL;	
+                                res = 0;
+                            }else{
+                        
+                                do{
+                                    res = verificar((*in).nome,nome); <strong class="comit">Chama função auxiliar</strong>
+                                    if(res == 1){
+                                        (*in).valor += valor;
+                                        res = 0;
+                                        break;
+                                    }else{
+                                        if((*in).prox == NULL){
+                                            (*in).prox = (struct investidor*)malloc(sizeof(struct investidor));
+                                            in = (*in).prox;
+                                            string((*in).nome,nome,20);
+                                            (*in).valor = 0;
+                                            (*in).valor += valor;
+                                            (*in).prox = NULL;
+                                            (*in).aprox = NULL;    <strong class="comit">PRECISA SETAR ISSO, OU IRÁ DAR PROBLEMAS</strong>
+                                            break;
+                                                            
+                                        }else{
+                                            if((*in).prox!= NULL){
+                                                in = (*in).prox;
+                                            }else{
+                                                printf("Algo deu errado em nome!!");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }while(1);		
+                            }
+                        
+                            if((*in).aprox == NULL){
+                                (*in).aprox =(struct acoes*)malloc(sizeof(struct acoes));
+                                a = (*in).aprox;
+                                iniciarAtivo(a);
+                                (*a).qnt += valor / preco;
+                                (*a).valorinvest += valor;		
+                                string((*a).ativo,ativo,6);
+                            }else{
+                                a = (*in).aprox; //"inicia ativos"
+                                
+                                do{
+                                    res = verificar((*a).ativo,ativo);
+                                    if(res == 1){
+                                        (*a).qnt += valor / preco;
+                                        (*a).valorinvest += valor;
+                                        res = 0;
+                                        break;
+                                    }else{
+                                            if((*a).prox==NULL){
+                                                (*a).prox = (struct acoes*)malloc(sizeof(struct acoes));
+                                                a = (*a).prox;
+                                                iniciarAtivo(a);
+                                                //(*a).prox = NULL; <strong class="comit">define proximo a apontar para nulo</strong>	
+                                                string((*a).ativo,ativo,6);
+                                                (*a).qnt += valor / preco;
+                                                (*a).valorinvest += valor;					
+                                                break;
+                                            }else{
+                                                 if((*a).prox!=NULL){
+                                                     a = (*a).prox;
+                                                 }else{
+                                                     printf("Algo deu errado em ativo!!");
+                                                     break;
+                                                 }
+                                            }
+                                    }
+                                }while(1);
+                            }
+                                
+                            if((*c).data[0] == '\0'){ <strong class="comit">nao existe cria o primeiro</strong>
+                                string((*c).data,data,20);
+                                string((*c).nome,nome,10);
+                                string((*c).ativo,ativo,6);
+                                (*c).preco = preco;
+                                (*c).qnt = valor/preco;
+                                (*c).prox = NULL;
+                            }else{
+                                do{
+                                    if((*c).prox == NULL){  <strong class="comit">proximo é nullo?</strong>
+                                            (*c).prox = (struct dataCom*)malloc(sizeof(struct dataCom));
+                                            c = (*c).prox;
+                                            iniciarDataCom(c);
+                                            string((*c).data,data,20);
+                                            string((*c).nome,nome,10);
+                                            string((*c).ativo,ativo,6);
+                                            (*c).preco = preco;
+                                            (*c).qnt = valor/preco;
+                                            (*c).prox = NULL;
+                                        break;
+                                    }
+                                c =(*c).prox;
+                                }while(1);
+                            }
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>A seguir temos a função de mostrar os investidores</p>
+            <p>No momento utilizei <strong>do while</strong> para criar um laço que seja sempre "verdade", e assim que atenda alguma condição específica, utilizei o <strong>break</strong> para quebrar o laço.</p>
+            <p>
+                <code>
+                    <pre>
+                        void mostrar(struct investidor *in){
+                            printf("\n\n");
+                            struct acoes *a;
+                            do{
+                                printf("\nInvestidor: %s  Total investido: %.2f \n\n",
+                                (*in).nome,(*in).valor);
+                                    a =(*in).aprox;
+                                do{
+                                    
+                                printf("                      Ativo: %s  quantidade %.f Total 
+                                investido : %.2f Média: %.2f ",(*a).ativo,(*a).qnt,
+                                (*a).valorinvest,(*a).valorinvest/(*a).qnt);
+                                if((*a).proventos > 0){
+                                    printf("   $$ %.2f $$  ",(*a).proventos);
+                                }	
+                                if((*a).prox==NULL){
+                                    break;
+                                }
+                                printf("\n");
+                                a = (*a).prox;
+                                    
+                                }while(1);
+                                printf("\n");
+                                if((*in).prox==NULL){
+                                    break;
+                                }
+                                in = (*in).prox;
+                            }while(1);
+                        }
+                    </pre>
+                </code>
+            </p>
+
+
+            <p>A seguir temos a função de mostrar os dados de proventos pagos</p>
+            <p>Utilizei o mesmo esquema da função anterior sobre o <strong>do while</strong></p>
+            <p>
+                <code>
+                    <pre>
+                        void proventos(struct investidor *in, struct dataCom *r,
+                         char *nomei, char *nomea,char *data, float valorp,
+                          float valort,float *saldo){
+
+                            float res = 0;
+                            struct acoes *a;
+                            do{
+                                res = verificar((*in).nome,nomei);
+                                    if(res == 1){
+                                        res = 0;
+                                        a =(*in).aprox;
+                                        do{
+                                            res = verificar((*a).ativo,nomea);
+                                            if(res == 1){
+                                                (*a).proventos += valorp;  <strong class="comit">valorp é o provento pago</strong>
+                                                *saldo += valort - valorp;
+                                                break; <strong class="comit">Quebra o laço</strong>
+                                            }else{
+                                                if((*a).prox!= NULL){
+                                                    a =(*a).prox;
+                                                }else{
+                                                    printf("Ativo do Investidor %s não existe!!",(*in).nome);
+                                                    break; <strong class="comit">Quebra o laço</strong>
+                                                }
+                                            }
+                                        }while(1); <strong class="comit">Força o laço</strong>
+                                        break;	
+                                    }else{
+                                        if((*in).prox != NULL){
+                                            in = (*in).prox;
+                                        }else{
+                                            printf("Investidor não encontrado!!");
+                                            break; <strong class="comit">Quebra o laço</strong>
+                                        }
+                                    }
+                            }while(1); <strong class="comit">força o laço</strong>
+                            
+                            if((*r).data[0] == '\0'){ //nao existe cria o primeiro
+                                string((*r).data,data,20);
+                                string((*r).nome,nomei,10);
+                                string((*r).ativo,nomea,6);
+                                (*r).preco = valorp;
+                                (*r).prox = NULL;
+                            }else{
+                                do{
+                                    if((*r).prox == NULL){  //proximo é nullo?
+                                            (*r).prox = (struct dataCom*)malloc(sizeof(struct dataCom));
+                                            r = (*r).prox;
+                                            iniciarDataCom(r);
+                                            string((*r).data,data,20);
+                                            string((*r).nome,nomei,10);
+                                            string((*r).ativo,nomea,6);
+                                            (*r).preco = valorp;
+                                            (*r).prox = NULL;
+                                        break; <strong class="comit">Quebra o laço</strong>
+                                    }
+                                r =(*r).prox;
+                                }while(1);       <strong class="comit">Força o laço</strong>                 
+                            }                            
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>temos a função para mostrar a data de compra (mostrarC) e a data de recibo () respectivamente onde ambos utilizam a mesma estrutura (dataCom)</p>
+
+            <p>
+                <code>
+                    <pre>
+                        void mostrarC(struct dataCom *compra){
+                            int i = 1;
+                        
+                            do{
+                                printf(" \n");
+                                printf("%i° Compra : %s  ",i,(*compra).data);
+                                printf("Investidor: %s ",(*compra).nome);
+                                printf("[ %s ] ",(*compra).ativo);
+                                printf(" preço: %.2f",(*compra).preco);
+                                printf("  Quantidade: %.0f",(*compra).qnt);
+                                i+=1;
+                                if((*compra).prox == NULL)
+                                    break;
+                                
+                                    compra = (*compra).prox;			
+                            }while(1);
+                        }
+                    </pre>
+                </code>
+            </p>
+            <p>
+                <code>
+                    <pre>
+                        void mostrarR(struct dataCom *recibo){
+                            int i = 1;
+                                printf(" \n\n");
+                            do{
+                                //printf(" \n\n");
+                                printf("%i° Provento pago : %s  ",i,(*recibo).data);
+                                printf("Investidor: %s ",(*recibo).nome);
+                                printf("[ %s ] ",(*recibo).ativo);
+                                printf(" Valor: %.2f\n",(*recibo).preco);
+                                i+=1;
+                                if((*recibo).prox == NULL)
+                                    break;
+                                
+                                    recibo = (*recibo).prox;			
+                            }while(1);
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>Funções Auxiliares</p>
+            <p>Para comparar duas Strings e verificar se são iguais. Para verificar o nome do investidor</p>
+            <p>
+                <code>
+                    <pre>
+                        int verificar(char *prim, char *seg){  <strong class="comit">recebe duas strings 
+                            e verifica se são iguais, independente se existe alguma 
+                            em maiúsculo ou minúsculo</strong>
+
+                            do{
+                                if(*prim != *seg){
+                                    if(*prim<*seg && 32+(int)*prim == (int)*seg){
+                                        return 1; //iguais 
+                                    }else if(*prim>*seg && (int)*prim == 32+(int)*seg){
+                                        return 1; //iguais
+                                    }else{
+                                        return 0; //alguma letra diferente
+                                        break;
+                                    }
+                                }
+                                if((int)*prim != (int)*seg);
+                                
+                                prim+=1;
+                                seg+=1;
+                            }while(*prim != '\0' || *seg != '\0');
+                            return 1;
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>Verificar a porcentagem de ganhos!!</p>
+
+            <p>
+                <code>
+                    <pre>
+                        void porcent(struct investidor *in,struct dataCom *r,float *x,float *y){
+                            *x += (*in).valor;
+                            *y += (*r).preco;
+                            
+                            while((*in).prox!=NULL){
+                                in = (*in).prox;
+                                *x += (*in).valor;
+                            }
+                            while((*r).prox!=NULL){
+                                r = (*r).prox;
+                                *y += (*r).preco;
+                            }
+                            
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>Função para calcular a média de valor dos ativos:</p>
+
+            <p>
+                <code>
+                    <pre>
+                        void media(char datI[],char datU[], struct dataCom *R){
+                            int i = (verifica(datI));  //sera sempre junho mesmo 
+                            int f,ano,tam,res = 0;
+                            float tot = 0,meses=0;
+                            
+                            for(tam = 0; datU[tam] != '\0'; tam++);
+                            ano = (1000 *(datU[tam-4]- '0')) + (100 *(datU[tam-3]- '0'))
+                             + (10*(datU[tam-2]- '0')) + ((datU[tam-1]- '0'));
+                            f = verifica(datU);
+                            
+                             if(ano>2023){
+                                if(ano-2023>=1){
+                                    meses = (i -12) + ((ano-2023)*12) + f;
+                                }else{
+                                    meses = (i-12) + f;
+                                }
+                            }else{
+                                meses = f-i;
+                            }
+                                 
+                             do{
+                                 res = verificar((*R).nome,"Gilmar");
+                                 if(res == 1){
+                                 tot += (*R).preco;
+                                 res = 0;
+                                 }
+                                 if((*R).prox == NULL){
+                                     break;
+                                 }
+                                 R = (*R).prox;
+                             }while(1);
+                             
+                            printf("\n\n");
+                            printf("\nEm %.0f meses a média ganho por mês foi : 
+                            R$:%.2f \n",meses,tot/meses); //tot e o total de 
+                            dividendos     total e a quantidade de meses
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>Funções para "setar" os dados dos campos de cada strutura criada...</p>
+
+            <p>
+                <code>
+                    <pre>
+                        void iniciarInvestidor(struct investidor *inicio){
+                            (*inicio).nome[0] = '\0';
+                            (*inicio).valor = 0;
+                            (*inicio).aprox = NULL;
+                            (*inicio).prox = NULL;
+                        };
+                        
+                        void iniciarAtivo(struct acoes *acoes){
+                            (*acoes).ativo[0] = '\0';
+                            (*acoes).qnt = 0;
+                            (*acoes).valorinvest = 0;
+                            (*acoes).proventos = 0;
+                            (*acoes).prox = NULL;
+                        }
+                        
+                        void iniciarDataCom(struct dataCom *compra){
+                            (*compra).data[0] = '\0';
+                            (*compra).nome[0] = '\0';
+                            (*compra).ativo[0] = '\0';
+                            (*compra).preco = 0;
+                            (*compra).qnt = 0;
+                            (*compra).prox = NULL;
+                        }
+                    </pre>
+                </code>
+            </p>
+
+            <p>Função para inserir uma String dentro de um vetor, ou seja, transformar uma string em um vetor de caracteres</p>
+            <p>
+                <code>
+                    <pre>
+                        void string(char *pont, char *nome,int qnt){ <strong class="comit"> para inserir uma
+                             string em um vetor de char (vetor,string,tamanho da string)</strong>
+                            int i;
+                            for(i=0;i < qnt; i++){
+                                pont[i] = nome[i];
+                            }
+                        };	
+                    </pre>
+                </code>
+            </p>
+        
+
+        <p>Função para verificar o mês: </p>
+
+        <p>
+            <code>
+                <pre>
+                    int verifica(char datI[]){
+	
+                        int mes, ind = 3;
+                             
+                        if(datI[ind] == 'j'){
+                            if(datI[ind+1] == 'a'){
+                                mes = 1;
+                            }else{
+                                mes =  6;
+                            }
+                        }else{	
+                            if(datI[ind] == 'f'){
+                                mes = 2;
+                            }else{
+                                if(datI[ind] == 'm'){
+                                    if(datI[ind+2]=='r'){
+                                        mes = 3;
+                                    }else{
+                                        mes = 5;
+                                    }
+                                }else{
+                                    if(datI[ind] == 'a'){
+                                        if(datI[ind+1]=='b'){
+                                            mes = 4;
+                                        }else{
+                                            mes = 8;
+                                        }
+                                    }else{
+                                        if(datI[ind] == 's'){
+                                            mes = 9;
+                                        }else{
+                                            if(datI[ind] == 'o'){
+                                                mes = 10;
+                                            }else{
+                                                if(datI[ind] == 'n'){
+                                                    mes = 11;
+                                                }else{
+                                                    if(datI[ind] == 'd'){
+                                                        mes = 12;
+                                                    }
+                                                    else{
+                                                        printf("Não enontrado");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return mes;                        
+                    }
+                </pre>
+            </code>
+        </p>
+
+        <p>Protótipos das funções criadas e que serão utilizadas:</p>
+
+        <p>
+            <code>
+                <pre>
+                    int verifica(char datI[]);
+
+                    void media(char datI[] ,char datU[], struct dataCom *R);
+
+                    void string(char *pont, char *nome,int qnt);
+
+                    int verificar(char *prim, char *seg);
+
+                    void mostrar(struct investidor *in);
+
+                    void iniciarInvestidor(struct investidor *inicio);
+
+                    void iniciarAtivo(struct acoes *acoes);
+
+                    void iniciarDataCom(struct dataCom *compra);
+                    
+                    void investimento(struct investidor *in, struct dataCom *c, 
+                    char *nome, float preco, char *ativo, float valor, char *data);
+
+                    void mostrarC(struct dataCom *compra);
+
+                    void proventos(struct investidor *in,struct dataCom *r,
+                    char *nomei,char *nomea,char *data,float valorp,float valort,float *saldo);
+
+                    void mostrarR(struct dataCom *recibo);
+
+                    void porcent(struct investidor *in,struct dataCom *r,float *x,float *y);
+                </pre>
+            </code>
+        </p>
+
+        <p>A entrada de dados será assim, por exemplo:</p>
+
+        <p>
+            <code>
+                <pre>
+        investimento(atualI,atualC,"Gilmar",1941.72,"PETR4",29.42,"30/junho/2023"); <strong class="comit">para investimento</strong>
+        
+        proventos(atualI,atualR,"Gilmar","KLBN4","15/agosto/2023",9.89,0,&saldo); <strong class="comit">para proventos pagos</strong>
+                </pre>
+            </code>
+        </p>
+
+
+        </div>
+        </section>
+        
+        <footer>
+            <p class="formato">Função para investimentos</p>
+        </footer>
+    </body>
+</html>
