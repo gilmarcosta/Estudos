@@ -16,20 +16,31 @@ if(hora >= 6 && hora <= 12){
     }
 }
 
+function isnumero(n){
+
+}
+
+function inlista(n,l){
+
+}
 
 function adicionar(){
     if(n.value.length==0){
         window.alert('Insira um valor!!')
     }else{
-        let num = Number(n.value)
-        if(num > 100 || num < 0){
-            window.alert('Insira um valor de 0 a 100!!')
+        if(isnumero(num.value) && ! inlista(num.value, vetor)){
+            let num = Number(n.value)
+            if(num > 100 || num < 0){
+                window.alert('Insira um valor de 0 a 100!!')
+            }else{
+                vetor += [num]
+                let op = window.document.createElement('option') //crases ''
+                op.text = innerHTML = ` O numero ${num} foi adicionado` //sem parenteses  
+                res.appendChild(op)
+                numero.text = ``
+            }
         }else{
-            vetor += [num]
-            let op = window.document.createElement('option') //crases ''
-            op.text = innerHTML = ` O numero ${num} foi adicionado` //sem parenteses  
-            res.appendChild(op)
-            numero.text = ``
+            window.alert('Valor invalido ou já encontrado na lista.')
         }
     }
 }
