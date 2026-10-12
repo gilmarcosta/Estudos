@@ -43,7 +43,7 @@ struct gancho{
 
 struct acoes{  //criado para listar os ativos de cada usuario (nome do ativo, quantidade, valor total investido no ativo, total de proventos recebidos)
 	char ativo[7];
-	float qnt; //float para poder formatar o texto na hora de imprimir, caso consiga com int depois altero
+	int qnt; //float para poder formatar o texto na hora de imprimir, caso consiga com int depois altero
 	int ativobonus;
 	float media;
 	float P_media;
@@ -60,7 +60,8 @@ struct acoes{  //criado para listar os ativos de cada usuario (nome do ativo, qu
 	float dividendos;
 	float proventoPagoPorAtivo;
 	float reinvestido;
-	float nova; //novos ativos 
+	int nova; //novos ativos 
+	int venda;
 	float compranova; //valor investido anual
 	struct acoes *prox;	
 };
@@ -152,7 +153,7 @@ void add_compra(struct dataCom *c, char *data, char *nome, char *ativo, float pr
 void arquivo_bin(struct gancho *g);
 struct gancho* igancho();
 void escreverdados_carteira(struct gancho *g);
-
+void print_(float numero);
 
 struct gancho* igancho(){
 	struct gancho *novo = (struct gancho*)malloc(sizeof(struct gancho));
@@ -174,11 +175,11 @@ int main(){
 	//system("cls");
 
 	
-	escreverdados_compras(atualg);
+	//escreverdados_compras(atualg);
 	//escreverdados_vendas(atualg);
 	//escreverdados_dividendos(atualg);
 	//escreverdados_carteira(atualg);
-	//int op = 6;
+	int op = 6;
 	/*
 	1 - média (crescente)
 	2 - quantidade (Decrescente)
@@ -187,9 +188,9 @@ int main(){
 	5 - porcentagem pago em proventos do ano atual (Decrescente)
 	6 - porcentagem do investimento ao todo (Decrescente)
 	*/
-	//ordenar(atualg,op);
+	ordenar(atualg,op);
 	//printf();
-	//mostrar(atualg,datU);
+	mostrar(atualg,datU);
 	
 	printf("\n\n%i investidores\n%i compras\n%i vendas\n%i recibos\n\n",(*atualg).investidores,(*atualg).compras,(*atualg).vendas,(*atualg).recibos);
 	
@@ -206,6 +207,28 @@ int main(){
 	return 0;
 }
 
+void print_(float numero){
+	long long valor = (long long)(numero*100);	
+	if(valor < 1000){
+		int centavos = valor%100;
+		long long real = valor /100; //exclui os centavos
+		int unidade = real % 1000;
+		printf("%3d,%02d ",unidade,centavos);
+	}else{
+		if(valor > 1000 && valor < 99999){
+			int centavos = valor%100;
+			long long real = valor /100; //exclui os centavos
+			int unidade = real % 1000;
+			printf("%3d,%02d ",unidade,centavos);
+		}else{
+			int centavos = valor%100;
+			long long real = valor /100; //exclui os centavos
+			int unidade = real % 1000;
+			int milhar = (real/1000) % 1000;
+			printf("%3d.%03d,%02d ",milhar,unidade,centavos);
+		}
+	}
+}
 
 void escreverdados_carteira(struct gancho *g){
 	
@@ -219,7 +242,7 @@ void escreverdados_carteira(struct gancho *g){
 					fprintf(arquivo,"\n%s \n",(*in).nome);
 					struct acoes *a = (*in).aprox;
 					while(a!=NULL){
-						fprintf(arquivo,">>ativo [%6s] ; quantidade [%8.0f] ; Média [%8.2f]\n",(*a).ativo,(*a).qnt,(*a).media);
+						fprintf(arquivo,">>ativo [%6s] ; quantidade [%8i] ; Média [%8.2f]\n",(*a).ativo,(*a).qnt,(*a).media);
 						a = (*a).prox;
 					}
 					in = (*in).prox;
@@ -633,150 +656,144 @@ void mostrar(struct gancho *g, char *data){ //aquii
 		struct acoes *a;
 		struct investidor *in;
 		float totalproventos = 0, totalinvestido = 0, totaltotal = 0;
-		int mes = 12,QA=0;
-		float res;
-		float divA=0,divB=0; //media total (considerando por açao)
+		int QA = 0;
+
+
 		in = (*g).i;
 		printf("\n");
 		//system("MODE con cols=145 lines=60");
 		//system("title versão 1.8");
 		printf("-------------------------------------------------------------------------------------------------------------------------------------------------\n");
-		printf("\n");
+		//printf("\n");
 		do{
 			printf("\n");
-			printf("Investidor: %s  Total investido: %.2f | Reinvestimento Total: %.2f || Investido no ano Atual: %.2f   TX: %.2f   --JCP pago [ %.2f ]",(*in).nome,(*in).valor,(*in).valorReinvestido,(*in).valorDoanoatual,(*in).taxaBolsa,(*in).imposto);
+			printf("Investidor: "); printf("%s",(*in).nome);
+			printf("\n                "); 
+			printf("Total investido:"); print_((*in).valor);
+			printf("Reinvestimento Total:"); print_((*in).valorReinvestido);
+			printf("Investido no ano Atual:"); print_((*in).valorDoanoatual);
+			printf("TX:"); print_((*in).taxaBolsa);
+			printf("JCP pago: "); print_((*in).imposto);
 			printf("\n                ");		
-			printf("Total:[ %.2f = %.2f%% ] ",(*in).valor2,((*in).valor2/(*in).valor)*100); //TOTAL RECEBIDOS
+			printf("Total:["); print_((*in).valor2);
+			printf(" = ");
+			printf("%.2f%% ]",((*in).valor2/(*in).valor)*100); //TOTAL RECEBIDOS
 			printf("                          ");
-			printf("Proventos recebidos %i: [ %.2f = %.2f%% | %.2f%%]  ",(*g).ano,(*in).valor3,((*in).valor3/(*in).valor)*100,((*in).valor3/( (*in).valor - (*in).valorReinvestido)*100)); //ANO ATUAL RECEBIDO
+			printf("Proventos recebidos %i: [",(*g).ano);
+			print_((*in).valor3);
+			printf(" = %.2f%% ] ",((*in).valor3/(*in).valor)*100); //ANO ATUAL RECEBIDO);
 			printf("\n                ");
 			if((*in).saldo > 0){
-				printf("SALDO ATUAL: %.2f  ",(*in).saldo);
+				printf("SALDO ATUAL:["); print_((*in).saldo); printf("]");
 			}
 			if((*in).lucro > 0.01){
-				printf("Lucro:[ %.2f ]  ",(*in).lucro);
+				printf("Lucro:["); print_((*in).lucro); printf("]");
 			} 
-			
+			printf("  ");
 			if((*in).perda < 0) {
-				printf("Perda:[ %.2f ]  ",((*in).perda)*-1);
+				printf("Perda:["); print_((*in).perda*-1); printf("]");
 			}
-			
 			printf("\n\n");
 				totalinvestido += (*in).valor;
 				totaltotal += (*in).valor2;
 				totalproventos += (*in).valor3;
 				a =(*in).aprox;
-				printf("    ATIVO | QNT|NOVAS | INVESTID | DIV T. | MÉDIA  | DIF  | Reinvest.  |P.P.A| %% AA |  %%T.  |  P.P.A  | %% A.C. |  %%P.M  | Último  | N | Investido\n");
+				
+				printf("%*s|",3,"");				//dados-caractere			
+				printf("ATIVO%*s|",1,"");
+				printf("QNT%*s|",1,"");
+				printf("NOVAS%*s|",1,"");
+				printf("VENDAS %*s|",0,"");
+				printf("INVESTIDO%*s|",0,"");
+				printf("DIV. TOT.%*s|",3,"");
+				printf("MÉDIA%*s|",2,"");
+				printf("DIF%*s|",2,"");
+				printf("Reinvest.%*s|",2,"");
+				printf("P.P.A%*s|",0,"");
+				printf("%% AA%*s|",2,"");
+				printf(" P.P.A%*s|",4,"");
+				printf(" Último%*s|",2,"");
+				printf(" N%*s|",1,"");
+				printf("Investido%*s\n",0,"");
 			do{
-				if((*a).ativo[5]!= '\0'){ //para organizar os que possuem mais um caractere, apenas visual
-					if((*a).nova == 0){
-						printf(" >> %s%4.f [    ] : %8.2f ",(*a).ativo,(*a).qnt,(*a).valorinvest);
-					}else{
-						printf(" >> %s%4.f [%4.0f] : %8.2f ",(*a).ativo,(*a).qnt,(*a).nova,(*a).valorinvest);
-					}
-					if((*a).proventos > 0){
-						printf("%8.2f",(*a).proventos);
-					}else{
-						printf("        ");
-					}
+				printf(" >> %6s %4i",(*a).ativo,(*a).qnt);		
+				if((*a).nova == 0){ 
+					printf("[%*s] ",4,"");
 				}else{
-					if((*a).nova == 0){
-						printf(" >> %s%5.f [    ] : %8.2f ",(*a).ativo,(*a).qnt,(*a).valorinvest);
-					}else{
-						printf(" >> %s%5.f [%4.0f] : %8.2f ",(*a).ativo,(*a).qnt,(*a).nova,(*a).valorinvest);
-					}
-					if((*a).proventos > 0){
-						printf("%8.2f",(*a).proventos); //aquii
-					}else{
-						printf("        ");
-					}
+					printf("[%4.i] ",(*a).nova);
+				}	
+				if((*a).venda == 0){ 
+					printf("[%*s] ",4,"");
+				}else{
+					printf("[%4.i] ",(*a).venda);
 				}
-		
-			res = (((*a).pagamentoA/(*a).media)*100)/mes;
+				if((*a).valorinvest<1000){
+					printf("%*s",4,"");
+				}
+				printf("%*s",2,"");
+				print_((*a).valorinvest);	
+					
+				if((*a).proventos > 0){
+					if((*a).proventos<1000){
+						printf("%*s",4,"");	
+					}
+					print_((*a).proventos);
+				}else{
+					printf("%*s",11,"");
+				}
+
 			
-			printf("  ");
-			if((*a).media > 0){
-				printf(" %6.2f ",(*a).media);
-				if((*a).P_media != (*a).media){
-					//printf(" %6.2f ",(*a).P_media); 
+				print_((*a).media);
+				if((*a).P_media != (*a).media && (*a).qnt != 0){
 					if((*a).media - (*a).P_media > 0){
-						printf("+");
-						//printf("%6.2f",(*a).P_media);
-						printf("%6.2f",((*a).media) - (*a).P_media);
+						printf(" +");
+						printf("%5.2f",((*a).media) - (*a).P_media);
 					}else{
-						printf("-");
-						//printf("%6.2f",(*a).P_media);
-						printf("%6.2f",(((*a).media) - (*a).P_media)*-1);
+						printf(" -");
+						printf("%5.2f",(((*a).media) - (*a).P_media)*-1);
 					}
 				}else{
-					printf("       ");
-					//printf("+ %6.2f ",(*a).P_media);
+					printf("%*s",7,"");
 				}
 				if((*a).reinvestido > 0){
-					printf("  %8.2f  ",(*a).reinvestido);
+					if((*a).reinvestido<1000){
+						printf("%*s",4,"");	
+					}
+					print_((*a).reinvestido);	
+					
 				}else{
-					printf("            ");	
+					printf("%*s",11,"");	
 				}
+
 				if((*a).pagamentoA > 0){
 				printf(" [%3.2f] ",(*a).pagamentoA); //Por Ativo anual
-				
-				
-				
-				divA += (*a).media;
-				divB += (*a).pagamentoA;
-				//printf(" : %2.2f ] ",(*a).pagamentoT); //Total Pago
 				}else{
-				
-					printf("        ");
+					printf("%*s",8,"");
 				}
-				//printf("((%.2f)) ",(*a).taxa); //taxa da bolsa total
-				if((*a).base > 0){
-				//printf(">%8.2f ",((*a).base)*100); //base para calcular se esta rendendo + que a poupança (6%), OBS: E o que deveria render e não oque rendeu!!!
-				//printf("%8.2f ",((*a).proventoPagoPorAtivo/(*a).media)*100); //porcentagem total
+
+				printf(" %5.1f",((*a).valorinvest/(*in).valor)*100); //parte da carteira de investimentos
 				
-				printf("%5.2f ",((*a).pagamentoA / (*a).media)*100);
-				//printf("%5.2f ",((*a).proventosA / ((*a).valorinvest - (*a).reinvestido))*100);
+				if((*a).proventosA<1000){
+						printf("%*s",4,"");	
+					}
+					print_((*a).proventosA);
 				
-				printf(":%5.2f ",((*a).proventos/((*a).qnt *(*a).media))*100); //mostra o quanto rendeu (REAL) ao todo
-				}else{
-					printf("%5.2f ",((*a).proventosA / ((*a).valorinvest - (*a).reinvestido))*100);
-					printf(":%5.2f ",((*a).proventos/((*a).qnt *(*a).media))*100);
-					//printf("      ");
-					//printf("      ");
-				}
-				if((*a).ano != 0){
-					printf(" %8.2f ",(*a).proventosA);
-					
-					
-					printf(" %8.2f ",((*a).valorinvest/(*in).valor)*100); //parte da carteira de investimentos
-					if((*a).proventosA > 0){
-						printf(" %8.2f ",(((*a).pagamentoA/(*a).media)*100)/mes); // ((pago por acao/ media)*100 )/ mes atual
-						
-					}else{
-						printf("          ");
-					}
-				}else{
-					printf("           %8.2f",((*a).valorinvest/(*in).valor)*100); //parte da carteira de investimentos
-					if((*a).proventosA > 0){
-					printf(" >%8.2f ",(((*a).pagamentoA/(*a).media)*100)/mes); // ((pago por acao/ media)*100 )/ mes atual
-					printf(" %6.2f ",res); //porcentagem por mes
-					}else{
-						printf("              ");
-					}
-				}			
+	
 				if((*a).proventosU > 0){
 					printf(" >> %6.2f",(*a).proventosU);
 				}else{
-					printf("       ");
+					printf("%*s",10,"");
 				}
 	  
-				if(res > 1.5){
+	  		  int res = ((*a).pagamentoA/(*a).media)*100;
+	  		 
+				if(res > 13){
 					printf("  A");
 				}else{
-					if(res > 1){
+					if(res > 8){
 						printf("  B");
 					}else{
-						if(res >= 0.5){
+						if(res >= 6){
 							printf("  C");
 						}else{
 							printf("   ");
@@ -784,7 +801,7 @@ void mostrar(struct gancho *g, char *data){ //aquii
 					}
 				}
 				printf("  %8.2f",(*a).compranova);			
-			}
+			
 			QA += (*a).qnt;
 			if((*a).prox==NULL){
 				break;
@@ -800,13 +817,19 @@ void mostrar(struct gancho *g, char *data){ //aquii
 			}
 			in = (*in).prox;
 		}while(1);
-		//ate agosto
-		float poupanca = 3.9583 + 0.6767 + 0.6731;/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		printf("\n >>>>>    Total investido [%.2f] e total de proventos [%.2f] do ano atual [%6.2f] total [%.2f] vs [%.2f] poupança   <<<<< [%.2f]  ",totalinvestido,totalproventos,totaltotal,(totalproventos/totalinvestido)*100,poupanca,(divB/divA)*100);
-		printf("%i papéis",QA);
-	}
-}
+		
 
+		printf("\n >>>>>    Total investido    "); 
+		print_(totalinvestido); 
+		printf("\n >>>>>    Total de proventos ");
+		print_(totaltotal);
+		printf("\n >>>>>    Ano atual          ");
+		print_(totalproventos);
+		printf("\n >>>>>    Papéis             ");
+		printf("  %i",QA);
+	}
+
+}
 
 void mostrarC(struct dataCom *compra){
 	int i = 1;
@@ -890,7 +913,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 					res = verificar((*a).ativo,nome_ativo); //4
 					if(res==1){
 						if(qnt > (*a).qnt){
-							printf("\nNão tem como vender %i ativos da [%s] pois só existem %.0f ativos!!\n",qnt,nome_ativo,(*a).qnt);
+							printf("\nNão tem como vender %i ativos da [%s] pois só existem %i ativos!!\n",qnt,nome_ativo,(*a).qnt);
 							system("pause");
 							break;
 						}else{
@@ -907,6 +930,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 						(*a).compranova -= (preco * qnt);//aqui/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 						(*a).qnt = (*a).qnt - qnt;
 						(*a).nova -= qnt;
+						(*a).venda += qnt;
 						if((*a).nova < 0) (*a).nova = 0;
 						(*a).valorinvest = (*a).valorinvest - (media * qnt);
 						(*a).taxa += tx;
@@ -919,7 +943,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 						
 						//corrigirSaldo(g,nome_investidor,((preco * qnt)-tx));
 						 if((*a).qnt == 0){ //9
-							 (*a).media = 0; //qnt / (*a).valorinvest;
+							 //(*a).media = 0; //qnt / (*a).valorinvest;
 						 }
 						if((*a).qnt < 0){//8 esse aqui tem que ser antes das alteraçoes, não? (*i).valor -= (preco * qnt);
 							printf("\n [erro] quantidade não pode ser um número negativo!!\n");
@@ -1081,6 +1105,7 @@ void proventos_atual(struct gancho *g, char *nomei,char *nomea,char *data,float 
 						(*a).proventos += valorp;  //valorp é o provento pago
 						(*a).proventosA += valorp;
 						(*a).dividendos += dividendos;
+					
 						if(dig == 'D' || dig == 'd' || dig == 'J' || dig == 'j' || dig =='r' || dig == 'R'){
 							(*a).proventosU = valorp;
 						}						
@@ -1191,6 +1216,7 @@ void proventos__atual(struct gancho *g, char *nomei,char *nomea,char *data,float
 	pagamento = valorp;
 	calculo(codigo_data,data,&valorp,dig,qnt,IR);
 	dividendos = valorp;
+	
 	//teste(valorp,nomei,nomea,data,dig);	
 	
 	
@@ -1214,6 +1240,7 @@ void proventos__atual(struct gancho *g, char *nomei,char *nomea,char *data,float
 						(*a).proventos += valorp;  //valorp é o provento pago
 						(*a).proventosA += valorp; 
 						(*a).dividendos += dividendos;
+				
 						if(dig == 'D' || dig == 'd' || dig == 'J' || dig == 'j' || dig =='r' || dig == 'R'){
 							(*a).proventosU = valorp;
 						}						
@@ -1335,6 +1362,7 @@ void iniciarAtivo(struct acoes *acoes){
 	(*acoes).base = 0;
 	(*acoes).reinvestido = 0;
 	(*acoes).nova = 0;
+	(*acoes).venda = 0;
 	(*acoes).compranova = 0;
 	(*acoes).prox = NULL;	
 }
@@ -1484,6 +1512,7 @@ void gambiarra2(struct gancho *g){ //RESETAR AS AÇOES COMPRADAS NO ANO ATUAL
 		a = (*in).aprox;
 		do{
 			(*a).nova = 0; // novas ações
+			(*a).venda = 0;
 			(*a).compranova = 0; //valor investido atualmente
 			(*a).proventosA = 0;
 			(*a).pagamentoA = 0; //ooo ano atual  //ooo
@@ -2151,6 +2180,7 @@ void Compra2026(struct gancho *g){
 	
 	reinvestimento(g,"Gilmar",6,"SAPR4",7.42,"07/outubro/2026",0.02);
 	reinvestimento(g,"Gilmar",5,"SPXB11",17.21,"07/outubro/2026",0.03);
+	reinvestimento(g,"Gilmar",2,"SPXB11",17.25,"08/outubro/2026",0.02);
 	
 	Proventos2026(g);
 	}
@@ -2652,7 +2682,9 @@ void Proventos2026(struct gancho *g){
 	proventos_atual(g,"Gilmar","HGLG11","15/outubro/2026",1.1700000,'R',5); 
 	proventos_atual(g,"Gilmar","CXCE11","15/outubro/2026",0.4795,'r',115);               ///////////
 	proventos_atual(g,"NAN","CXCE11","15/outubro/2026",0.4795,'r',5);
-	
+	proventos_atual(g,"Gilmar","RECR11","15/outubro/2026",0.6182,'r',18); 
+	proventos_atual(g,"Gilmar","PCIP11","16/outubro/2026",0.65,'r',4);
+	proventos_atual(g,"Gilmar","RBRR11","19/outubro/2026",0.73,'r',10);  
 	
 	proventos__atual(g,"Gilmar","BBDC3","03/novembro/2026",0.01702,'J',50,0.175);
 	proventos_atual(g,"Gilmar","KLBN4","12/novembro/2026",0.04559717,'D',2807);
