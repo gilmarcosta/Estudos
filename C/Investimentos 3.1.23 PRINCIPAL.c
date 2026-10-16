@@ -26,6 +26,8 @@ de compra ate a data com, ou fazer ele percorrer a lista, mas não do inicio, e s
 o primeiro no como a ultima data com, assim não precisa puxar desde 2023.
 4 - a funcao irá retornar um valor, onde esse valor e o numero de cotas corretas dentro do prazo da data com
 5 - ai sim usar a funcao atualproventos
+
+//Conferir se esta gerando o id nas compras em struct ativos....... vc vai entender
 */
 
 struct gancho{
@@ -38,7 +40,6 @@ struct gancho{
 	struct dataCom *r; // recibo de dividendos!!
 	struct dataCom *c; //compras
 	struct dataCom *v; //vendas
-	struct resultado *R; // resultados cuidado!!
 };
 
 struct acoes{  //criado para listar os ativos de cada usuario (nome do ativo, quantidade, valor total investido no ativo, total de proventos recebidos)
@@ -63,11 +64,11 @@ struct acoes{  //criado para listar os ativos de cada usuario (nome do ativo, qu
 	int nova; //novos ativos 
 	int venda;
 	float compranova; //valor investido anual
+	struct compras *compras_prox;
 	struct acoes *prox;	
 };
 
 struct dataCom{  // criado para listar as datas das compras e as datas de proventos pagos (data da compra/recibo, nome do investidor e do ativo, preco pago ou valor recebido, quantidade de papeis comprado)
-	
 	char data[20];
 	char nome[10];
 	char ativo[7];
@@ -98,12 +99,16 @@ struct investidor{ // criado para listar os investidores  (nome do investidor, v
 	struct investidor *prox; 
 };
 
-struct resultado{
-	int ano;
-	struct investidor *prox;
-	struct resultado *proximo;
+struct compras{
+	int id;
+	int qnt_final;
+	int qnt;
+	struct compra *prox;
 };
 
+void iniciar_compras(struct compras *c);
+void tamanho_mes(char datI[],int *mes, int *tam);
+void data_(char *mes, int *codigo);
 void proventos_atual(struct gancho *g, char *nomei,char *nomea,char *data,float valorp,char dig,int qnt);
 void proventos__atual(struct gancho *g, char *nomei,char *nomea,char *data,float valorp,char dig,int qnt,float IR); 
 void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float preco, char *data, float tx); 
@@ -113,14 +118,11 @@ void string(char *pont, char *nome,int qnt);
 int verificar(char *prim, char *seg);
 void mostrar(struct gancho *g, char *data);
 void mostrarhtml(struct gancho *g, char *data);
-void mostrarResultado(struct gancho *g);
 void iniciarInvestidor(struct investidor *inicio);
 void iniciarAtivo(struct acoes *acoes);
 void iniciarDataCom(struct dataCom *compra);
-void iniciaResultados(struct resultado *res);
 void investimento(struct investidor *in, struct dataCom *c, char *nome, float preco, char *ativo, float valor, char *data);
 void mostrarC(struct dataCom *compra);
-void proventos(struct investidor *in,struct dataCom *r,struct resultado *resu, char *nomei,char *nomea,char *data,float valorp,float valort,float *saldo);
 void mostrarR(struct dataCom *recibo);
 void adicionarInvestimentos(struct gancho *g);
 void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nome_ativo, float preco, char *data ,float tx);
@@ -176,7 +178,7 @@ int main(){
 
 	
 	//escreverdados_compras(atualg);
-	//escreverdados_vendas(atualg);
+	escreverdados_vendas(atualg);
 	//escreverdados_dividendos(atualg);
 	//escreverdados_carteira(atualg);
 	int op = 6;
@@ -201,7 +203,6 @@ int main(){
 	//mostrarC((*atualg).r);
 	//mostrarC((*atualg).c); // mostrar compras de açoes
 	//mostrarR((*atualg).c); // mostrar proventos recebidos
-	//media(datI,datU,(*atualg).r,atualg);
 	
 	//system("pause");
 	return 0;
@@ -427,6 +428,76 @@ void media(char datI[],char datU[], struct dataCom *R,struct gancho *g){
 	//printf("\n\n");
 	printf("\n\nEm %.0f meses a média ganho por mês foi : R$:%.2f    >>%s<<\n",meses,tot/meses,datU); //tot e o total de dividendos     total e a quantidade de meses
 	printf("\nMédia investido por mês: %.2f em um total de %.0f meses\n",TOT_IN/meses,meses);
+}
+
+void data_(char *mes, int *codigo){
+	int mes_num,dia,ano,tam;
+	tamanho_mes(mes,&mes_num,&tam);
+	dia = ((mes[0] - '0')*10) + (mes[1] - '0');
+	ano = ((mes[tam+4] - '0') *1000) + ((mes[tam+5] - '0') *100) + ((mes[tam+6] - '0')*10) + (mes[tam+7] - '0');
+	*codigo = (ano * 10000) + (mes_num * 100) + dia;
+}
+
+void tamanho_mes(char datI[],int *mes, int *tam){
+	int ind = 3;
+		 
+	if(datI[ind] == 'j'){
+		if(datI[ind+1] == 'a'){
+			*mes = 1;
+			*tam = 7;
+		}else{
+			*mes = 6;
+			*tam = 5;
+		}
+	}else{	
+		if(datI[ind] == 'f'){
+			*mes = 2;
+			*tam = 9;
+		}else{
+			if(datI[ind] == 'm'){
+				if(datI[ind+2]=='r'){
+					*mes = 3;
+					*tam = 5;
+				}else{
+					*mes = 5;
+					*tam = 4;
+				}
+			}else{
+				if(datI[ind] == 'a'){
+					if(datI[ind+1]=='b'){
+						*mes = 4;
+						*tam = 5;
+					}else{
+						*mes = 8;
+						*tam = 6;
+					}
+				}else{
+					if(datI[ind] == 's'){
+						*mes = 9;
+						*tam = 8;
+					}else{
+						if(datI[ind] == 'o'){
+							*mes = 10;
+							*tam = 7;
+						}else{
+							if(datI[ind] == 'n'){
+								*mes = 11;
+								*tam = 8;
+							}else{
+								if(datI[ind] == 'd'){
+									*mes = 12;
+									*tam = 8;
+								}
+								else{
+									printf("Não enontrado");
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 int verifica(char datI[]){
@@ -886,6 +957,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 	struct acoes *a; //6
 	struct dataCom *r;
 	struct investidor *i;
+	struct compras *c;
 	float media = 0;
 	int res;
 	
@@ -931,6 +1003,38 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 						(*a).qnt = (*a).qnt - qnt;
 						(*a).nova -= qnt;
 						(*a).venda += qnt;
+						
+						
+						
+						
+					
+						
+						
+						
+						
+						if((*a).compras_prox == NULL){
+							(*a).compras_prox = malloc(sizeof(struct compras));
+							c = (*a).compras_prox;
+							iniciar_compras(c);
+							data_(data,&(*c).id);
+							(*c).qnt = qnt;
+							(*c).qnt_final -= qnt;
+						}else{
+							struct compras *temp;
+							temp = (*a).compras_prox;
+							(*a).compras_prox = malloc(sizeof(struct compras));
+							c = (*a).compras_prox;
+							iniciar_compras(c);
+							data_(data,&(*c).id);
+							(*c).qnt = qnt;
+							(*c).qnt_final -= qnt;
+							(*a).compras_prox = temp;
+						}	
+						
+						
+						
+										
+
 						if((*a).nova < 0) (*a).nova = 0;
 						(*a).valorinvest = (*a).valorinvest - (media * qnt);
 						(*a).taxa += tx;
@@ -1001,14 +1105,6 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 		}while(1);
 	}
 };
-
-
-void data(char *data, int codigo_matricula){
-	
-	
-	
-}
-
 
 
 void calculo(int codigo_data,char *data,float *valorp,char dig,int qnt, float IR){
@@ -1321,6 +1417,14 @@ void proventos__atual(struct gancho *g, char *nomei,char *nomea,char *data,float
 	}
 }
 
+
+void iniciar_compras(struct compras *c){
+	(*c).id = 0;
+	(*c).qnt_final = 0;
+	(*c).qnt = 0;
+	(*c).prox = NULL;
+}
+
 void iniciarInvestidor(struct investidor *inicio){
 	(*inicio).elementos_ativos = 0;
 	(*inicio).nome[0] = '\0';
@@ -1364,9 +1468,9 @@ void iniciarAtivo(struct acoes *acoes){
 	(*acoes).nova = 0;
 	(*acoes).venda = 0;
 	(*acoes).compranova = 0;
+	(*acoes).compras_prox = NULL;
 	(*acoes).prox = NULL;	
 }
-
 
 void iniciarDataCom(struct dataCom *compra){
 	(*compra).data[0] = '\0';
@@ -1380,11 +1484,6 @@ void iniciarDataCom(struct dataCom *compra){
 	(*compra).prox = NULL;
 }
 
-void iniciaResultados(struct resultado *res){
-	(*res).ano = 0;
-	(*res).prox = NULL;
-	(*res).proximo = NULL;
-}
 
 void i_gancho(struct gancho *g){
 	(*g).ano = 0;
@@ -1396,7 +1495,6 @@ void i_gancho(struct gancho *g){
 	(*g).i = NULL;
 	(*g).r = NULL;
 	(*g).v = NULL;
-	(*g).R = NULL;
 }
 
 void observacoes(){
@@ -2150,7 +2248,6 @@ void Compra2026(struct gancho *g){
 	investimento_atual(g,"Gilmar",16,"PORD11",8.22,"21/agosto/2026",0.05);
 	investimento_atual(g,"Gilmar",85,"SNEL11",8.19,"08/setembro/2026",0.23);
 	investimento_atual(g,"Gilmar",34,"PORD11",8.39,"08/setembro/2026",0.10);
-	
 	adicionarVendas(g,"Gilmar",50,"RURA11",8.08,"16/setembro/2026",0.13); //prejuizo
 	adicionarVendas(g,"Gilmar",39,"VGIA11",8.77,"16/setembro/2026",0.11); //prejuizo
 	investimento_atual(g,"Gilmar",5,"RECR11",75.16,"16/setembro/2026",0.13);
@@ -2177,10 +2274,14 @@ void Compra2026(struct gancho *g){
 	investimento_atual(g,"Gilmar",25,"PORD11",8.49,"06/outubro/2026",0.07);
 	investimento_atual(g,"Gilmar",18,"SNEL11",7.97,"06/outubro/2026",0.05);
 	investimento_atual(g,"Gilmar",2,"KLBN4",3.70,"06/outubro/2026",0.01);
-	
 	reinvestimento(g,"Gilmar",6,"SAPR4",7.42,"07/outubro/2026",0.02);
 	reinvestimento(g,"Gilmar",5,"SPXB11",17.21,"07/outubro/2026",0.03);
 	reinvestimento(g,"Gilmar",2,"SPXB11",17.25,"08/outubro/2026",0.02);
+	investimento_atual(g,"Gilmar",61,"SNEL11",8.06,"15/outubro/2026",0.16);
+	investimento_atual(g,"Gilmar",1,"SNEL11",8.07,"15/outubro/2026",0.01);
+	adicionarVendas(g,"Gilmar",25,"RZTR11",86.75,"15/outubro/2026",0.69);
+	adicionarVendas(g,"Gilmar",4,"RZTR11",84.60,"15/outubro/2026",0.69);
+	adicionarVendas(g,"Getúlio",22,"RZTR11",86.75,"15/outubro/2026",0); // junto com a minha
 	
 	Proventos2026(g);
 	}
@@ -2685,6 +2786,9 @@ void Proventos2026(struct gancho *g){
 	proventos_atual(g,"Gilmar","RECR11","15/outubro/2026",0.6182,'r',18); 
 	proventos_atual(g,"Gilmar","PCIP11","16/outubro/2026",0.65,'r',4);
 	proventos_atual(g,"Gilmar","RBRR11","19/outubro/2026",0.73,'r',10);  
+	proventos_atual(g,"Gilmar","VGIA11","20/outubro/2026",0.12,'r',200); 
+	proventos_atual(g,"Gilmar","SNEL11","23/outubro/2026",0.10,'r',525); 
+	proventos_atual(g,"NAN","SNEL11","23/outubro/2026",0.10,'r',80); 
 	
 	proventos__atual(g,"Gilmar","BBDC3","03/novembro/2026",0.01702,'J',50,0.175);
 	proventos_atual(g,"Gilmar","KLBN4","12/novembro/2026",0.04559717,'D',2807);
