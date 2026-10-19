@@ -40,6 +40,7 @@ struct gancho{
 	struct dataCom *r; // recibo de dividendos!!
 	struct dataCom *c; //compras
 	struct dataCom *v; //vendas
+	struct referencia *ref;
 };
 
 struct acoes{  //criado para listar os ativos de cada usuario (nome do ativo, quantidade, valor total investido no ativo, total de proventos recebidos)
@@ -106,6 +107,19 @@ struct compras{
 	struct compra *prox;
 };
 
+struct referencia{
+	char nomea[6];
+	struct ref_investidor *iprox;
+	struct referencia *prox;	
+};
+
+struct ref_investidor{
+	char nome[10];
+	struct ref_investidor *prox;
+};
+
+void iniciar_ref_investidor(struct ref_investidor *r);
+void iniciar_referencia(struct referencia *r);
 void iniciar_compras(struct compras *c);
 void tamanho_mes(char datI[],int *mes, int *tam);
 void data_(char *mes, int *codigo);
@@ -156,6 +170,9 @@ void arquivo_bin(struct gancho *g);
 struct gancho* igancho();
 void escreverdados_carteira(struct gancho *g);
 void print_(float numero);
+int teclado();
+void painel();
+
 
 struct gancho* igancho(){
 	struct gancho *novo = (struct gancho*)malloc(sizeof(struct gancho));
@@ -169,19 +186,16 @@ int main(){
 	char datI[20] = {},datU[20] = {};
 	string(datI,"03/agosto/2023",20); //30/junho/2023 começou os investimentos, porém passou da datacom, entao começa a contagem de agosto (03/08) anuciou, (21/08) datacom
 	string(datU,"01/maio/2026",20); //  ******************* alterar a cada modificação
-	
 	struct gancho *atualg = NULL;
 	
 	atualg = igancho();   //adiciona compras
 	adicionarInvestimentos(atualg);
 	//system("cls");
-
 	
-	//escreverdados_compras(atualg);
-	escreverdados_vendas(atualg);
-	//escreverdados_dividendos(atualg);
-	//escreverdados_carteira(atualg);
+	
+	
 	int op = 6;
+	ordenar(atualg,op);
 	/*
 	1 - média (crescente)
 	2 - quantidade (Decrescente)
@@ -190,23 +204,91 @@ int main(){
 	5 - porcentagem pago em proventos do ano atual (Decrescente)
 	6 - porcentagem do investimento ao todo (Decrescente)
 	*/
-	ordenar(atualg,op);
+	
 	//printf();
-	mostrar(atualg,datU);
+	//mostrar(atualg,datU);
 	
 	printf("\n\n%i investidores\n%i compras\n%i vendas\n%i recibos\n\n",(*atualg).investidores,(*atualg).compras,(*atualg).vendas,(*atualg).recibos);
 	
-	//arquivo_bin(atualg);
 	
+	painel();
+	
+	do{
+		int resp = teclado();
+	if(resp == 1){
+		escreverdados_compras(atualg);
+	}else{
+		if(resp == 2){
+			escreverdados_vendas(atualg);
+		}else{
+			if(resp == 3){
+				escreverdados_dividendos(atualg);
+			}else{
+				if(resp == 4){
+					escreverdados_carteira(atualg);
+				}else{
+					printf("\nNenhuma opção escolhida");
+					break;
+				}
+			}
+		}
+	}
+	}while(1);
+	
+	
+	
+	//arquivo_bin(atualg);
 	//mostrarhtml(atualg,datU);
 	//mostrar(atualg,datU);
 	//mostrarC((*atualg).r);
 	//mostrarC((*atualg).c); // mostrar compras de açoes
 	//mostrarR((*atualg).c); // mostrar proventos recebidos
-	
 	//system("pause");
 	return 0;
 }
+
+
+
+void painel(){
+	printf("\n");
+	printf("[1] para escrever dados de compras\n");
+	printf("[2] para escrever dados de vendas\n");
+	printf("[3] para escrever dados de dividendos\n");
+	printf("[4] para escrever dados da carteira\n");
+}
+
+int teclado(){
+		
+	int op = 0,achou = 0;
+	char entrada[10];
+	fgets(entrada,sizeof(entrada),stdin);
+
+	if(entrada[0] == '\n'){
+		printf("\nNão digitou nada");
+	}else{
+		for(op=0;op<10;op++){
+			if(entrada[op] == '\n'){
+				achou = 1;
+				break;
+				//dentro do limite
+			}
+		}
+	}
+	
+	if(achou == 0){
+		printf("\nEstourou o limite");
+		int c;
+		while((c = fgetchar()) != '\n' && c != EOF);
+	}
+	
+	op = (int)entrada[0] - '0';
+	if(op > 0 && op < 5 ){
+		return op;
+	}else{
+		return 0;
+	}
+}
+
 
 void print_(float numero){
 	long long valor = (long long)(numero*100);	
@@ -257,7 +339,9 @@ void escreverdados_carteira(struct gancho *g){
 	}else{
 		printf("\nErro no arquivo bin\n");
 	}
+	printf("\n Arquivo [Carteira.txt] PRONTO!!\n");
 	fclose(arquivo);
+	system("pause");
 }
 
 
@@ -302,14 +386,13 @@ void escreverdados_compras(struct gancho *g){
 				c = (*c).prox;
 				cont++;
 			};
-			printf("\n arquivo [compras.txt] PRONTO!!\n");
+			printf("\n Arquivo [compras.txt] PRONTO!!\n");
 			fclose(a);
 			system("pause");
 		}
 		
 	}	
 }
-
 
 void escreverdados_vendas(struct gancho *g){
 	FILE *a = NULL;
@@ -332,7 +415,7 @@ void escreverdados_vendas(struct gancho *g){
 			cont++;
 			v = (*v).prox;
 		};
-		printf("\n arquivo [vendas.txt] PRONTO!!\n");
+		printf("\n Arquivo [vendas.txt] PRONTO!!\n");
 		fclose(a);
 		system("pause");
 	}
@@ -351,7 +434,6 @@ void escreverdados_dividendos(struct gancho *g){
 		while(d!=NULL){
 			fprintf(a,"[%3.i]° %-20s %-6s %10.2f %-10s       ",cont,(*d).data,(*d).ativo,(*d).preco,(*d).nome);
 			
-			printf("[%i] %c",cont,(*d).obs);
 			if((*d).obs == 'D'|| (*d).obs == 'd'){
 				fprintf(a,"Dividendos\n");
 			}else{
@@ -370,7 +452,7 @@ void escreverdados_dividendos(struct gancho *g){
 		}
 	}
 	
-	printf("PRONTO!!");
+	printf("\n Arquivo [dividendos.txt] PRONTO!!\n");
 	fclose(a);
 	system("pause");
 }
@@ -380,6 +462,17 @@ void adicionarInvestimentos(struct gancho *g){
 	Compra2024(g);
 	Compra2025(g);
 	Compra2026(g);
+}
+
+void iniciar_ref_investidor(struct ref_investidor *r){
+	(*r).nome[0] = '\0';
+	(*r).prox = NULL;
+}
+
+void iniciar_referencia(struct referencia *r){
+	(*r).nomea[0] = '\0';
+	(*r).iprox = NULL;
+	(*r).prox = NULL;
 }
 
 void media(char datI[],char datU[], struct dataCom *R,struct gancho *g){
@@ -1003,15 +1096,6 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 						(*a).qnt = (*a).qnt - qnt;
 						(*a).nova -= qnt;
 						(*a).venda += qnt;
-						
-						
-						
-						
-					
-						
-						
-						
-						
 						if((*a).compras_prox == NULL){
 							(*a).compras_prox = malloc(sizeof(struct compras));
 							c = (*a).compras_prox;
@@ -1019,6 +1103,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 							data_(data,&(*c).id);
 							(*c).qnt = qnt;
 							(*c).qnt_final -= qnt;
+							printf("\n %i",(*c).qnt_final);
 						}else{
 							struct compras *temp;
 							temp = (*a).compras_prox;
@@ -1029,12 +1114,8 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 							(*c).qnt = qnt;
 							(*c).qnt_final -= qnt;
 							(*a).compras_prox = temp;
+							printf("\n %i",(*c).qnt_final);
 						}	
-						
-						
-						
-										
-
 						if((*a).nova < 0) (*a).nova = 0;
 						(*a).valorinvest = (*a).valorinvest - (media * qnt);
 						(*a).taxa += tx;
@@ -1043,8 +1124,6 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 						}else{
 							(*a).valorinvest = 0;
 						}
-						
-						
 						//corrigirSaldo(g,nome_investidor,((preco * qnt)-tx));
 						 if((*a).qnt == 0){ //9
 							 //(*a).media = 0; //qnt / (*a).valorinvest;
