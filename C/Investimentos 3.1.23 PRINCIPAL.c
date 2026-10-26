@@ -206,11 +206,11 @@ int main(){
 	*/
 	
 	//printf();
-	//mostrar(atualg,datU);
+	mostrar(atualg,datU);
 	
 	printf("\n\n%i investidores\n%i compras\n%i vendas\n%i recibos\n\n",(*atualg).investidores,(*atualg).compras,(*atualg).vendas,(*atualg).recibos);
 	
-	
+	/*
 	painel();
 	
 	do{
@@ -234,7 +234,7 @@ int main(){
 		}
 	}
 	}while(1);
-	
+	*/
 	
 	
 	//arquivo_bin(atualg);
@@ -265,6 +265,7 @@ int teclado(){
 
 	if(entrada[0] == '\n'){
 		printf("\nNão digitou nada");
+		achou = 1;
 	}else{
 		for(op=0;op<10;op++){
 			if(entrada[op] == '\n'){
@@ -291,6 +292,12 @@ int teclado(){
 
 
 void print_(float numero){
+	
+	if(numero < 0){
+		printf(" -");
+		numero *= -1;
+	}
+	
 	long long valor = (long long)(numero*100);	
 	if(valor < 1000){
 		int centavos = valor%100;
@@ -1090,7 +1097,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 						media = (*a).media;	
 						(*i).valor -= (media * qnt);
 						(*i).valorDoanoatual -= (media * qnt);
-						if((*i).valorDoanoatual <0) (*i).valorDoanoatual = 0;
+						//if((*i).valorDoanoatual <0) (*i).valorDoanoatual = 0;
 						//aqui deveria ter um if, caso valor menor que zero(negativo)
 						(*a).compranova -= (preco * qnt);//aqui/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 						(*a).qnt = (*a).qnt - qnt;
@@ -1103,7 +1110,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 							data_(data,&(*c).id);
 							(*c).qnt = qnt;
 							(*c).qnt_final -= qnt;
-							printf("\n %i",(*c).qnt_final);
+							//printf("\n %i",(*c).qnt_final);
 						}else{
 							struct compras *temp;
 							temp = (*a).compras_prox;
@@ -1114,7 +1121,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 							(*c).qnt = qnt;
 							(*c).qnt_final -= qnt;
 							(*a).compras_prox = temp;
-							printf("\n %i",(*c).qnt_final);
+							//printf("\n %i",(*c).qnt_final);
 						}	
 						if((*a).nova < 0) (*a).nova = 0;
 						(*a).valorinvest = (*a).valorinvest - (media * qnt);
@@ -2246,8 +2253,11 @@ void Compra2026(struct gancho *g){
 	investimento_atual(g,"Gilmar",10,"GARE11",8.30,"08/maio/2026",0.03);
 	adicionarVendas(g,"Getúlio",67,"PETR4",29.41,"12/maio/2026",0); //para comprar outra
 	adicionarVendas(g,"Eliana",13,"PETR4",32.56,"12/maio/2026",0); //para comprar outra
+	
 	investimento_atual(g,"Getúlio",22,"RZTR11",89.47,"14/maio/2026",0.64); corrigirSaldo(g,"Getúlio",-1968.98);
 	investimento_atual(g,"Eliana",50,"MXRF11",8.30,"14/maio/2026",0.16); corrigirSaldo(g,"Eliana",-415);
+	
+	
 	reinvestimento(g,"Gilmar",9,"BBAS3",20.00,"14/maio/2026",0.07);
 	reinvestimento(g,"Gilmar",23,"SNEL11",8.55,"14/maio/2026",0.07);
 	reinvestimento(g,"Gilmar",100,"GARE11",8.26,"14/maio/2026",0.27);
@@ -2299,15 +2309,15 @@ void Compra2026(struct gancho *g){
 	investimento_atual(g,"Gilmar",17,"PORD11",8.35,"07/agosto/2026",0.05);
 	investimento_atual(g,"Gilmar",15,"CMIG4",10.97,"07/agosto/2026",0.06);
 	investimento_atual(g,"Gilmar",50,"SNEL11",8.37,"07/agosto/2026",0.14);
-	investimento_atual(g,"NAN",5,"CMIG4",10.81,"10/agosto/2026",0.02);
-	investimento_atual(g,"NAN",5,"BRBI11",13.11,"10/agosto/2026",0.03);
-	investimento_atual(g,"NAN",5,"CXCE11",40.30,"10/agosto/2026",0.07);
-	investimento_atual(g,"NAN",30,"GGRC11",9.65,"10/agosto/2026",0.10);
-	investimento_atual(g,"NAN",80,"SNEL11",8.38,"10/agosto/2026",0.22);
-	investimento_atual(g,"NAN",5,"BRBI11",12.73,"10/agosto/2026",0.03);
-	investimento_atual(g,"NAN",10,"CMIG4",10.71,"10/agosto/2026",0.04);
-	investimento_atual(g,"NAN",56,"KLBN4",3.57,"10/agosto/2026",0.07);
-	investimento_atual(g,"NAN",57,"KLBN4",3.51,"10/agosto/2026",0.07);
+	investimento_atual(g,"Gilmar",5,"CMIG4",10.81,"10/agosto/2026",0.02);
+	investimento_atual(g,"Gilmar",5,"BRBI11",13.11,"10/agosto/2026",0.03);
+	investimento_atual(g,"Gilmar",5,"CXCE11",40.30,"10/agosto/2026",0.07);
+	investimento_atual(g,"Gilmar",30,"GGRC11",9.65,"10/agosto/2026",0.10);
+	investimento_atual(g,"Gilmar",80,"SNEL11",8.38,"10/agosto/2026",0.22);
+	investimento_atual(g,"Gilmar",5,"BRBI11",12.73,"10/agosto/2026",0.03);
+	investimento_atual(g,"Gilmar",10,"CMIG4",10.71,"10/agosto/2026",0.04);
+	investimento_atual(g,"Gilmar",56,"KLBN4",3.57,"10/agosto/2026",0.07);
+	investimento_atual(g,"Gilmar",57,"KLBN4",3.51,"10/agosto/2026",0.07);
 	adicionarVendas(g,"Gilmar",250,"XPCA11",7.07,"17/agosto/2026",0.56); //prejuizo
 	investimento_atual(g,"Gilmar",10,"BBAS3",18.20,"17/agosto/2026",0.06);
 	investimento_atual(g,"Gilmar",30,"SNEL11",8.18,"17/agosto/2026",0.08);
@@ -2340,8 +2350,8 @@ void Compra2026(struct gancho *g){
 	reinvestimento(g,"Gilmar",3,"PORD11",8.24,"21/setembro/2026",0.01);
 	reinvestimento(g,"Gilmar",1,"RECR11",75.00,"22/setembro/2026",0.03);
 	reinvestimento(g,"Gilmar",1,"PORD11",8.26,"22/setembro/2026",0.01);
-	adicionarVendas(g,"Gilmar",50,"BRBI11",14.52,"25/setembro/2026",0.28);
-	adicionarVendas(g,"NAN",10,"BRBI11",14.52,"25/setembro/2026",0.28);
+	adicionarVendas(g,"Gilmar",60,"BRBI11",14.52,"25/setembro/2026",0.28);
+	//adicionarVendas(g,"NAN",10,"BRBI11",14.52,"25/setembro/2026",0.28);
 	reinvestimento(g,"Gilmar",3,"KLBN4",3.62,"25/setembro/2026",0.01);
 	reinvestimento(g,"Gilmar",5,"WIZC3",7.85,"25/setembro/2026",0.02);
 	reinvestimento(g,"Gilmar",10,"SPXB11",17.82,"28/setembro/2026",0.06);
@@ -2361,6 +2371,21 @@ void Compra2026(struct gancho *g){
 	adicionarVendas(g,"Gilmar",25,"RZTR11",86.75,"15/outubro/2026",0.69);
 	adicionarVendas(g,"Gilmar",4,"RZTR11",84.60,"15/outubro/2026",0.69);
 	adicionarVendas(g,"Getúlio",22,"RZTR11",86.75,"15/outubro/2026",0); // junto com a minha
+	
+	
+	investimento_atual(g,"Gilmar",50,"KLBN4",3.61,"19/outubro/2026",0.06);
+	adicionarVendas(g,"Gilmar",10,"RBRR11",74.08,"19/outubro/2026",0.24);
+	investimento_atual(g,"Gilmar",7,"RECR11",75.80,"19/outubro/2026",0.18);
+	investimento_atual(g,"Gilmar",3,"SPXB11",17.18,"19/outubro/2026",0.02);
+	investimento_atual(g,"Gilmar",19,"GARE11",8.70,"19/outubro/2026",0.06);
+	investimento_atual(g,"Gilmar",10,"TIMS3",18.96,"20/outubro/2026",0.07);
+	investimento_atual(g,"Gilmar",5,"SPXB11",17.05,"20/outubro/2026",0.03);
+	investimento_atual(g,"Gilmar",10,"WIZC3",7.13,"20/outubro/2026",0.03);
+	investimento_atual(g,"Gilmar",11,"GARE11",8.77,"20/outubro/2026",0.04);
+	investimento_atual(g,"Gilmar",2,"RECR11",76.58,"23/outubro/2026",0.05);
+	investimento_atual(g,"Gilmar",4,"SNEL11",7.96,"23/outubro/2026",0.02);
+	investimento_atual(g,"Gilmar",1,"RECR11",76.48,"23/outubro/2026",0.03);
+	
 	
 	Proventos2026(g);
 	}
@@ -2805,8 +2830,8 @@ void Proventos2026(struct gancho *g){
 	proventos__atual(g,"Gilmar","PETR4","20/agosto/2026",0.35048636,'J',735,0.175);
 	proventos__atual(g,"Getúlio","PETR4","20/agosto/2026",0.35048636,'J',67,0.175);
 	proventos__atual(g,"Eliana","PETR4","20/agosto/2026",0.35048636,'J',182,0.175);
-	proventos_atual(g,"Gilmar","SNEL11","24/agosto/2026",0.10,'R',290);
-	proventos_atual(g,"NAN","SNEL11","24/agosto/2026",0.10,'R',80);
+	proventos_atual(g,"Gilmar","SNEL11","24/agosto/2026",0.10,'R',370);
+	//proventos_atual(g,"NAN","SNEL11","24/agosto/2026",0.10,'R',80);
 	proventos__atual(g,"Gilmar","TAEE4","26/agosto/2026",0.186332,'j',150,0.175);
 	proventos_atual(g,"Gilmar","BRBI11","28/agosto/2026",0.18,'d',50);
 	
@@ -2821,16 +2846,16 @@ void Proventos2026(struct gancho *g){
 	proventos_atual(g,"Gilmar","PORD11","08/setembro/2026",0.098000,'r',166);               //////////
 	proventos_atual(g,"Gilmar","RZTR11","08/setembro/2026",0.85000000,'r',29);              //////////
 	proventos_atual(g,"Getúlio","RZTR11","08/setembro/2026",0.85000000,'r',22);             //////////
-	proventos_atual(g,"Gilmar","GGRC11","09/setembro/2026",0.10000000,'r',270);             //////////
-	proventos_atual(g,"NAN","GGRC11","09/setembro/2026",0.10000000,'r',30);                 //////////
+	proventos_atual(g,"Gilmar","GGRC11","09/setembro/2026",0.10000000,'r',300);             //////////
+	//proventos_atual(g,"NAN","GGRC11","09/setembro/2026",0.10000000,'r',30);                 //////////
 	proventos__atual(g,"Gilmar","BBAS3","11/setembro/2026",0.10413811686,'J',275,0.175);  //////////
 	proventos__atual(g,"Eliana","BBAS3","11/setembro/2026",0.10413811686,'J',25,0.175);
 	proventos__atual(g,"Gilmar","BBAS3","11/setembro/2026",0.00281400,'R',275,0.175);  //////////
 	proventos__atual(g,"Eliana","BBAS3","11/setembro/2026",0.00281400,'R',25,0.175);
 	proventos__atual(g,"Gilmar","BBAS3","11/setembro/2026",0.03450628,'J',275,0.175);  //////////
 	proventos__atual(g,"Eliana","BBAS3","11/setembro/2026",0.03450628,'J',25,0.175);
-	proventos_atual(g,"Gilmar","CXCE11","15/setembro/2026",0.4758,'r',115);               ///////////
-	proventos_atual(g,"NAN","CXCE11","15/setembro/2026",0.4758,'r',5);                    //////////
+	proventos_atual(g,"Gilmar","CXCE11","15/setembro/2026",0.4758,'r',120);               ///////////
+	//proventos_atual(g,"NAN","CXCE11","15/setembro/2026",0.4758,'r',5);                    //////////
 	proventos_atual(g,"Eliana","MXRF11","15/setembro/2026",0.1000000,'R',50);             //////////
 	proventos__atual(g,"Gilmar","BBDC3","15/setembro/2026",0.31535904,'J',50,0.175);
 	proventos__atual(g,"Gilmar","BBDC3","15/setembro/2026",0.27030774,'J',50,0.175);
@@ -2840,8 +2865,8 @@ void Proventos2026(struct gancho *g){
 	proventos__atual(g,"Gilmar","PETR4","21/setembro/2026",0.35048636,'J',735,0.175);
 	proventos__atual(g,"Getúlio","PETR4","21/setembro/2026",0.35048636,'J',67,0.175); //pg
 	proventos__atual(g,"Eliana","PETR4","21/setembro/2026",0.35048636,'J',182,0.175); //pg
-	proventos_atual(g,"Gilmar","SNEL11","24/agosto/2026",0.10,'R',420);
-	proventos_atual(g,"NAN","SNEL11","24/setembro/2026",0.10,'R',80);
+	proventos_atual(g,"Gilmar","SNEL11","24/agosto/2026",0.10,'R',500);
+	//proventos_atual(g,"NAN","SNEL11","24/setembro/2026",0.10,'R',80);
 	proventos__atual(g,"Gilmar","BBDC3","31/setembro/2026",0.35119075,'J',50,0.175);
 	
 	 
@@ -2854,20 +2879,20 @@ void Proventos2026(struct gancho *g){
 	proventos_atual(g,"Gilmar","RZTR11","07/outubro/2026",0.85000000,'r',29);              //////////
 	proventos_atual(g,"Getúlio","RZTR11","07/outubro/2026",0.85000000,'r',22);
 	proventos_atual(g,"Gilmar","GARE11","07/outubro/2026",0.083000,'r',420);
-	proventos_atual(g,"Gilmar","GGRC11","08/outubro/2026",0.10000000,'r',270);             //////////
-	proventos_atual(g,"NAN","GGRC11","08/outubro/2026",0.10000000,'r',30); 
+	proventos_atual(g,"Gilmar","GGRC11","08/outubro/2026",0.10000000,'r',300);             //////////
+	//proventos_atual(g,"NAN","GGRC11","08/outubro/2026",0.10000000,'r',30); 
 	proventos_atual(g,"Gilmar","XPCA11","15/outubro/2026",0.10000000,'r',200);           
 	proventos_atual(g,"Gilmar","RZAG11","15/outubro/2026",0.12500000,'r',262);
 	proventos_atual(g,"Eliana","MXRF11","15/outubro/2026",0.1000000,'R',50); 
 	proventos_atual(g,"Gilmar","HGLG11","15/outubro/2026",1.1700000,'R',5); 
-	proventos_atual(g,"Gilmar","CXCE11","15/outubro/2026",0.4795,'r',115);               ///////////
-	proventos_atual(g,"NAN","CXCE11","15/outubro/2026",0.4795,'r',5);
+	proventos_atual(g,"Gilmar","CXCE11","15/outubro/2026",0.4795,'r',120);               ///////////
+	//proventos_atual(g,"NAN","CXCE11","15/outubro/2026",0.4795,'r',5);
 	proventos_atual(g,"Gilmar","RECR11","15/outubro/2026",0.6182,'r',18); 
 	proventos_atual(g,"Gilmar","PCIP11","16/outubro/2026",0.65,'r',4);
 	proventos_atual(g,"Gilmar","RBRR11","19/outubro/2026",0.73,'r',10);  
 	proventos_atual(g,"Gilmar","VGIA11","20/outubro/2026",0.12,'r',200); 
-	proventos_atual(g,"Gilmar","SNEL11","23/outubro/2026",0.10,'r',525); 
-	proventos_atual(g,"NAN","SNEL11","23/outubro/2026",0.10,'r',80); 
+	proventos_atual(g,"Gilmar","SNEL11","23/outubro/2026",0.10,'r',605); 
+	//proventos_atual(g,"NAN","SNEL11","23/outubro/2026",0.10,'r',80); 
 	
 	proventos__atual(g,"Gilmar","BBDC3","03/novembro/2026",0.01702,'J',50,0.175);
 	proventos_atual(g,"Gilmar","KLBN4","12/novembro/2026",0.04559717,'D',2807);
