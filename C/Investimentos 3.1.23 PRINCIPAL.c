@@ -129,7 +129,7 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 int verifica(char datI[]);
 void media(char datI[] ,char datU[], struct dataCom *R,struct gancho *g);
 void string(char *pont, char *nome,int qnt);
-int verificar(char *prim, char *seg);
+int verificar(char *prim, const char *seg);
 void mostrar(struct gancho *g, char *data);
 void mostrarhtml(struct gancho *g, char *data);
 void iniciarInvestidor(struct investidor *inicio);
@@ -290,14 +290,11 @@ int teclado(){
 	}
 }
 
-
 void print_(float numero){
-	
 	if(numero < 0){
 		printf(" -");
 		numero *= -1;
 	}
-	
 	long long valor = (long long)(numero*100);	
 	if(valor < 1000){
 		int centavos = valor%100;
@@ -1034,23 +1031,34 @@ void mostrarR(struct dataCom *recibo){
 	}while(1);
 }
 
-int verificar(char *prim, char *seg){  //recebe duas strings e verifica se são iguais, independente se existe alguma em maiusculo ou minusculo
-	do{
-		if(*prim != *seg){
-			if(*prim<*seg && 32+(int)*prim == (int)*seg){
-				return 1; //iguais 
-			}else if(*prim>*seg && (int)*prim == 32+(int)*seg){
-				return 1; //iguais
-			}else{
-				return 0; //alguma letra diferente
-				break;
-			}
+int verificar(char *prim, const char *seg){  //recebe duas strings e verifica se são iguais, independente se existe alguma em maiusculo ou minusculo
+	while (*prim != '\0' && *seg != '\0'){
+		// 1. Se os caracteres já são exatamente iguais, podemos avançar
+		if (*prim == *seg) {
+            prim++;
+            seg++;
+            continue; // Vai para a próxima letra
+        }
+        
+        int iguais = 0;
+        // 2. Se forem diferentes, testamos a regra de maiúscula/minúscula (diferença de 32)
+		if(*prim<*seg && 32+(int)*prim == (int)*seg){
+			iguais = 1; //iguais 
+		}else if(*prim>*seg && (int)*prim == 32+(int)*seg){
+			iguais = 1; //iguais
 		}
-		if((int)*prim != (int)*seg);
-		prim+=1;
-		seg+=1;
-	}while(*prim != '\0' || *seg != '\0');
-	return 1;
+		// 3. Se não forem iguais nem diretamente e nem por case, a palavra é falsa! Retorna 0 na hora.
+		if(!iguais){
+			return 0;
+		}
+		prim++;
+		seg++;
+	}
+	
+	if (*prim == '\0' && *seg == '\0') {
+        return 1; // São idênticas!
+    }
+    return 0; // Uma é maior que a outra
 }
 
 void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nome_ativo, float preco, char *data ,float tx){ //falta teste ao adicionar a data
@@ -2041,6 +2049,63 @@ void transferencia(struct gancho *g, char *vendedor, char *nomeativo,int qnt, ch
 	investimento_atual(g,comprador,qnt,nomeativo,(*a).media,"troca",0);
 }
 
+int Tipo_ativo(char *ativo){
+	/*1 para ações
+	  2 para fundos de investimentos
+	  3 para fundos de investimentos imobiliarios
+	  4 para ETFs
+	  5 para renda fixa	
+	*/
+	
+	const char *acoes[] = {"BBAS3","BBDC3","BBSE3","BMGB4","CMIG4","CXSE3","DIRR3","FLRY3",
+							"KLBN4","PETR4","SAPR4","SYNE3","TAEE4","TIM3","VALE3","WIZC3"};
+	const char *fii[]   = {"CXCE11","GARE11","GGRC11","HGLG11","MXRF11","PCIP11","PORD11",
+						"RECR11","SNEL11"};
+	const char *fi[]    = {"RURA11","RZAG11","VGIA11","XPCA11"};
+	const char *ETFS[]  = {"SPXB11"};
+	
+	const char *ren_fixa[] = {"LFTB11"};
+	
+	int tam = 0,contador;
+	
+	tam = sizeof(acoes)/ sizeof(acoes[1]);
+	for(contador=0;contador<tam;contador++){
+		if(verificar(ativo,acoes[contador])){
+			return 1;
+		}
+	}
+	
+	tam = sizeof(fii) / sizeof(fii[0]);
+	for(contador=0;contador<tam;contador++){
+		if(verificar(ativo,fii[contador])){
+			return 2;
+		}
+	}
+	
+	tam = sizeof(fi) / sizeof(fi[0]);
+	for(contador=0;contador<tam;contador++){
+		if(verificar(ativo,fi[contador])){
+			return 3;
+		}
+	}
+	
+	tam = sizeof(ETFS) / sizeof(ETFS[0]);
+	for(contador=0;contador<tam;contador++){
+		if(verificar(ativo,ETFS[contador])){
+			return 4;
+		}
+	}
+	
+	tam = sizeof(ren_fixa) / sizeof(ren_fixa[0]);
+	for(contador=0;contador<tam;contador++){
+		if(verificar(ativo,ren_fixa[contador])){
+			return 5;
+		}
+	}
+	return 0;
+}
+
+
 void Compra2023(struct gancho *g){
 	investimento_atual(g,"Gilmar",66,"PETR4",29.41203007518797,"30/junho/2023",0.64); 
 	investimento_atual(g,"Getúlio",67,"PETR4",29.41203007518797,"30/junho/2023",0.64); 
@@ -2385,6 +2450,13 @@ void Compra2026(struct gancho *g){
 	investimento_atual(g,"Gilmar",2,"RECR11",76.58,"23/outubro/2026",0.05);
 	investimento_atual(g,"Gilmar",4,"SNEL11",7.96,"23/outubro/2026",0.02);
 	investimento_atual(g,"Gilmar",1,"RECR11",76.48,"23/outubro/2026",0.03);
+	
+	investimento_atual(g,"Gilmar",17,"KLBN4",3.54,"26/outubro/2026",0.02);
+	investimento_atual(g,"Gilmar",18,"KLBN4",3.61,"26/outubro/2026",0.03);
+	investimento_atual(g,"Gilmar",3,"SAPR4",6.75,"26/outubro/2026",0.01);
+	investimento_atual(g,"Gilmar",1,"RECR11",72.96,"26/outubro/2026",0.03);
+	investimento_atual(g,"Gilmar",2,"LFTB11",127.66,"26/outubro/2026",0.09);
+	investimento_atual(g,"Gilmar",19,"KLBN4",3.69,"27/outubro/2026",0.03);
 	
 	
 	Proventos2026(g);
