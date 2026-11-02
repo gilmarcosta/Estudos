@@ -40,8 +40,8 @@ struct gancho{
 	struct dataRec *r; // recibo de dividendos!!
 	struct dataCom *c; //compras
 	struct dataCom *v; //vendas
-	struct referencia *ref;
-	struct ref_ativo *a;
+	struct referencia *ref; //???
+	struct ref_ativo *a; //referencia para analisar a dataCom
 };
 
 struct acoes{  //criado para listar os ativos de cada usuario (nome do ativo, quantidade, valor total investido no ativo, total de proventos recebidos)
@@ -116,12 +116,7 @@ struct investidor{ // criado para listar os investidores  (nome do investidor, v
 	struct investidor *prox; 
 };
 
-struct compras{
-	int id;
-	int qnt_final;
-	int qnt;
-	struct compra *prox;
-};
+
 
 struct ref_ativo{
 	char nomea[6];
@@ -137,14 +132,17 @@ struct ref_investidor{
 
 struct ref_compra{
 	int qnt;
+	int qnt_final;
 	int id;
 	struct ref_compra *prox;
 	
 };
-
+void iniciar_ref_ativo(struct ref_ativo *r);
 void iniciar_ref_investidor(struct ref_investidor *r);
 void iniciar_referencia(struct referencia *r);
-void iniciar_compras(struct compras *c);
+void iniciar_ref_compra(struct ref_compra *r);
+
+
 void tamanho_mes(char datI[],int *mes, int *tam);
 void data_(char *mes, int *codigo);
 void proventos_atual(struct gancho *g, char *nomei,char *nomea,char *data,float valorp,char dig,int qnt);
@@ -199,6 +197,7 @@ void painel();
 void iniciarDataRec(struct dataRec *compra);
 void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig, float taxa);
 
+void iniciar_compras(int o);
 
 struct gancho* igancho(){
 	struct gancho *novo = (struct gancho*)malloc(sizeof(struct gancho));
@@ -495,6 +494,10 @@ void escreverdados_dividendos(struct gancho *g){
 
 void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig, float taxa){
 	
+	if(taxa == 0 && (dig =='j'|| dig == 'J')){
+		taxa = 0.15;
+	}
+	
 	struct ref_ativo *a;
 	struct ref_investidor *investidor;
 	struct ref_compra *c;
@@ -533,8 +536,7 @@ void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig,
 			}else{
 				a = (*a).aprox; 
 			}
-		}
-				
+		}		
 	}
 }
 
@@ -718,9 +720,18 @@ int verifica(char datI[]){
 
 void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float preco, char *data, float tx){ //certo
 	int res=0;
+	
 	struct acoes *a;
 	struct investidor *in;
 	struct dataCom *c;
+	
+	struct ref_ativo *refa;
+	struct ref_investidor *refi;
+	struct ref_compra *atual, *temp;
+	
+	int id = 0;
+	data_(data,&id);
+	
 	float valor = preco * qnt;
 	
 	if((*g).i==NULL){
@@ -731,6 +742,182 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 	}else{
 		in = (*g).i;
 	}
+	
+	//desenvolvimento
+	
+	if((*g).a == NULL){ // 1° não tem ninguém
+		(*g).a = (struct ref_ativo*)malloc(sizeof(struct ref_ativo));
+		refa = (*g).a;
+		iniciar_ref_ativo(refa);// precisa inicializar para remover 'lixo'
+		string((*refa).nomea,ativo,7); // cuidado aqui, é o nome do ativo!!  *ativo vindo la como parametro
+		if((*refa).iprox == NULL){
+			(*refa).iprox = (struct ref_investidor*)malloc(sizeof(struct ref_investidor));
+			refi = (*refa).iprox;
+			iniciar_ref_investidor(refi); 
+			string((*refi).nome,nome,10); // nome do investidor, vindo la como parametro
+			
+			if((*refi).ref_cprox == NULL){
+				(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+				atual = (*refi).ref_cprox;
+				iniciar_ref_compra(atual); 
+				(*atual).id = id;
+				(*atual).qnt = qnt;
+			}else{
+				temp = (*refi).ref_cprox;
+				(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+				atual = (*refi).ref_cprox;
+				iniciar_ref_compra(atual); 
+				(*atual).id = id;
+				(*atual).qnt = qnt;
+				(*atual).prox = temp;  //aponta para o antigo primeiro elemento
+			}	
+		}else{
+			refi = (*refa).iprox;
+			while(refi!=NULL){
+				res = 0;
+				res = verificar((*refi).nome,nome); // O nome do investidor e igual ao nome do investidor passado por parametro?
+				if(res==1){
+					if((*refi).ref_cprox == NULL){
+						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+						atual = (*refi).ref_cprox;
+						iniciar_ref_compra(atual);
+						(*atual).id = id;
+						(*atual).qnt = qnt;
+					}else{
+						temp = (*refi).ref_cprox;
+						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+						atual = (*refi).ref_cprox;
+						iniciar_ref_compra(atual); 
+						(*atual).id = id;
+						(*atual).qnt = qnt;
+						(*atual).prox = temp;  
+					}
+					break;
+				}else{
+					if((*refi).ref_iprox == NULL){
+						(*refi).ref_iprox = (struct ref_investidor*)malloc(sizeof(struct ref_investidor));
+						refi = (*refi).ref_iprox;
+						iniciar_ref_investidor(refi); 
+						string((*refi).nome,nome,10);
+						if((*refi).ref_cprox == NULL){
+							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+							
+							atual = (*refi).ref_cprox;
+							iniciar_ref_compra(atual); 
+							(*atual).id = id;
+							(*atual).qnt = qnt;
+						}else{
+							temp = (*refi).ref_cprox;
+							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+							atual = (*refi).ref_cprox;
+							iniciar_ref_compra(atual); 
+							(*atual).id = id;
+							(*atual).qnt = qnt;
+							(*atual).prox = temp;  
+						}
+						break;
+					}
+					refi = (*refi).ref_iprox;
+				}
+			}
+		}
+	}else{ // 2º tem ativo, mas é igual ou diferente
+		refa = (*g).a;
+		while(refa!= NULL){
+			res = 0;
+			res = verificar((*refa).nomea,ativo);
+			if(res==1){ // é igual // verifica se o ativo ja existe
+				refi = (*refa).iprox;
+				while(refi!=NULL){ // significa que o ativo possui investidores
+				res = 0;
+				res = verificar((*refi).nome,nome); // O nome do investidor e igual ao nome do investidor passado por parametro?
+				if(res==1){ // sim, entao acrescenta dados
+					if((*refi).ref_cprox == NULL){
+						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+						atual = (*refi).ref_cprox;
+						iniciar_ref_compra(atual);
+						(*atual).id = id;
+						(*atual).qnt = qnt;
+					}else{ 
+						temp = (*refi).ref_cprox;
+						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+						atual = (*refi).ref_cprox;
+						iniciar_ref_compra(atual); 
+						(*atual).id = id;
+						(*atual).qnt = qnt;
+						(*atual).prox = temp;  
+					}
+					break;
+				}else{ // não, entao ele procura se o proximo e nulo
+					if((*refi).ref_iprox == NULL){ // próximo e nullo, então cria novo nó
+						(*refi).ref_iprox = (struct ref_investidor*)malloc(sizeof(struct ref_investidor));
+						refi = (*refi).ref_iprox;
+						iniciar_ref_investidor(refi); 
+						string((*refi).nome,nome,10);
+						if((*refi).ref_cprox == NULL){
+							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+							atual = (*refi).ref_cprox;
+							iniciar_ref_compra(atual); 
+							(*atual).id = id;
+							(*atual).qnt = qnt;
+						}else{
+							temp = (*refi).ref_cprox;
+							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+							atual = (*refi).ref_cprox;
+							iniciar_ref_compra(atual); 
+							(*atual).id = id;
+							(*atual).qnt = qnt;
+							(*atual).prox = temp;  
+						}
+						break;
+					} // proximo não e nulo entao procura o novo nó,  não vejo motivos para usar o else aqui, acima ja pararia o while
+					refi = (*refi).ref_iprox;
+				}
+			}
+
+				break;
+			}else{ // antes de ir para o proximo, verifica se o proximo existe, porque se nao tiver precisa criar antes de pular para o proximo
+				if((*refa).aprox == NULL){ //4° diferente e não tem próximo, cria
+					(*refa).aprox = (struct ref_ativo*)malloc(sizeof(struct ref_ativo));
+					refa = (*refa).aprox;
+					iniciar_ref_ativo(refa);
+					string((*refa).nomea,ativo,7);
+					//como o ativo é 'novo', logo não possui investidores, então cria o nó direto
+					if((*refa).iprox == NULL){
+						(*refa).iprox = (struct ref_investidor*)malloc(sizeof(struct ref_investidor));
+						refi = (*refa).iprox;
+						iniciar_ref_investidor(refi); 
+						string((*refi).nome,nome,10); // nome do investidor, vindo la como parametro
+						
+						if((*refi).ref_cprox == NULL){
+							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+							atual = (*refi).ref_cprox;
+							iniciar_ref_compra(atual); 
+							(*atual).id = id;
+							(*atual).qnt = qnt;
+						}else{
+							temp = (*refi).ref_cprox;
+							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+							atual = (*refi).ref_cprox;
+							iniciar_ref_compra(atual); 
+							(*atual).id = id;
+							(*atual).qnt = qnt;
+							(*atual).prox = temp;  //aponta para o antigo primeiro elemento
+						}
+						break;
+					}else{
+						printf("\nDeveria ser nullo\n");
+					}					
+				}
+				refa = (*refa).aprox; // 3º diferente e tem alguém , procura o próximo
+			}
+		}
+		
+	}
+	
+	
+	res = 0;
+	
 	
 	if((*g).c==NULL){
 		(*g).c = (struct dataCom*)malloc(sizeof(struct dataCom));
@@ -834,7 +1021,7 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 			}
 		c =(*c).prox;
 		}while(1);
-	}
+	}	
 }
 
 void reinvestimento(struct gancho *g,char *nome, int qnt, char *ativo, float preco, char *data, float tx){
@@ -1615,13 +1802,8 @@ void iniciar_ref_investidor(struct ref_investidor *r){
 	(*r).ref_iprox = NULL;
 }
 
-void iniciar_ref_compra(struct ref_compra *r){
-	(*r).qnt = 0;
-	(*r).id = 0;
-	(*r).prox = NULL;
-}
 
-void iniciar_compras(struct compras *c){
+void iniciar_ref_compra(struct ref_compra*c){
 	(*c).id = 0;
 	(*c).qnt_final = 0;
 	(*c).qnt = 0;
