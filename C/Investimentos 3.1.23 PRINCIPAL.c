@@ -142,6 +142,10 @@ void iniciar_ref_investidor(struct ref_investidor *r);
 void iniciar_referencia(struct referencia *r);
 void iniciar_ref_compra(struct ref_compra *r);
 
+void rotina (struct ref_investidor *refi, int id, int qnt);
+void rotina_venda(struct ref_investidor *refi, int id, int qnt);
+
+
 
 void tamanho_mes(char datI[],int *mes, int *tam);
 void data_(char *mes, int *codigo);
@@ -195,7 +199,7 @@ void print_(float numero);
 int teclado();
 void painel();
 void iniciarDataRec(struct dataRec *compra);
-void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig, float taxa);
+void pagamento(struct gancho *g, char *ativo, char *data, char *data_pag, float valor, char dig, float taxa);
 
 void iniciar_compras(int o);
 
@@ -205,6 +209,63 @@ struct gancho* igancho(){
 	return novo;
 }
 
+
+void rotina_venda(struct ref_investidor *refi, int id, int qnt){
+	struct ref_compra *temp, *atual;
+	
+	// Como a venda pressupõe que já houve compras anteriores, 
+	// se ref_cprox for NULL, significa que está tentando vender sem ter ações!
+	if((*refi).ref_cprox == NULL){
+		printf("\n[ERRO] Tentativa de venda sem saldo anterior para este investidor!\n");
+		return;
+	}
+	
+	temp = (*refi).ref_cprox;
+	(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+	atual = (*refi).ref_cprox;
+	iniciar_ref_compra(atual);
+	
+	(*atual).id = id;
+	(*atual).qnt = -qnt; // Salvamos como negativo para indicar saída/venda (opcional, ou tratamos no texto)
+	
+	// A mágica acontece aqui: subtrai do qnt_final do nó anterior!
+	(*atual).qnt_final = (*temp).qnt_final - qnt;
+	
+	if((*atual).qnt_final < 0) {
+		printf("\n[ERRO] Saldo ficaria negativo! Venda maior que o posendido.\n");
+		// Aqui você pode tratar para liberar o malloc se quiser
+	}
+	
+	(*atual).prox = temp; // Aponta para o topo anterior da pilha
+}
+
+void rotina(struct ref_investidor *refi, int id, int qnt){
+	
+	struct ref_compra *temp, *atual;
+	if((*refi).ref_cprox == NULL){
+		(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+		atual = (*refi).ref_cprox;
+		iniciar_ref_compra(atual);
+		(*atual).id = id;
+		(*atual).qnt = qnt;
+		(*atual).qnt_final = qnt; // Como é a única, o acumulado é ela mesma
+		(*atual).prox = NULL;
+	}else{
+		temp = (*refi).ref_cprox;
+		(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
+		atual = (*refi).ref_cprox;
+		iniciar_ref_compra(atual);
+		 
+		(*atual).id = id;
+		(*atual).qnt = qnt;
+		if(temp!= NULL){
+			(*atual).qnt_final = (*temp).qnt_final + qnt;
+		}else{
+			(*atual).qnt_final = qnt;
+		}
+		(*atual).prox = temp;  //aponta para o antigo primeiro elemento
+	}
+}
 
 int main(){
 	setlocale(LC_ALL, "Portuguese"); // adicionar acentuação
@@ -231,7 +292,7 @@ int main(){
 	*/
 	
 	//printf();
-	mostrar(atualg,datU);
+	//mostrar(atualg,datU);
 	
 	printf("\n\n%i investidores\n%i compras\n%i vendas\n%i recibos\n\n",(*atualg).investidores,(*atualg).compras,(*atualg).vendas,(*atualg).recibos);
 	
@@ -455,12 +516,18 @@ void escreverdados_vendas(struct gancho *g){
 }
 
 void escreverdados_dividendos(struct gancho *g){
-	FILE *a = NULL;
-	a = fopen("dividendos.txt","w");
 	
 	
 	if(g==NULL){
 		printf("\nNão tem oque escrever, lista vazia!! [dividendos]\n");
+		return;
+	}
+	
+	FILE *a = fopen("dividendos.txt","w");
+	
+	if(a==NULL){
+		printf("\nErro ao tentar abrir o arquivo 'dividendos.txt' para gravacao!\n");
+		return;
 	}else{
 		struct dataRec *d = (*g).r;
 		int cont = 1;
@@ -476,7 +543,7 @@ void escreverdados_dividendos(struct gancho *g){
 				   if((*d).obs == 'R'|| (*d).obs == 'r'){
 					fprintf(a,"Rendimento\n");
 					}else{
-						printf("erro\n");
+						fprintf(a,"erro\n");
 					}
 				}
 		}			
@@ -492,7 +559,7 @@ void escreverdados_dividendos(struct gancho *g){
 
 //proventos__atual(g,"Gilmar","PORD11","07/julho/2026",0.0980,'r',30);
 
-void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig, float taxa){
+void pagamento(struct gancho *g, char *ativo, char *data, char *data_pag, float valor, char dig, float taxa){
 	
 	if(taxa == 0 && (dig =='j'|| dig == 'J')){
 		taxa = 0.15;
@@ -500,13 +567,15 @@ void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig,
 	
 	struct ref_ativo *a;
 	struct ref_investidor *investidor;
-	struct ref_compra *c;
+	struct ref_compra *c,*guia = NULL;
 	
 	
 	int data_com = 0;
+
+	
 	data_(data,&data_com);
 	
-	
+	printf("\n%i\n",data_com);
 	//struct compras *compras;
 	
 	a = (*g).a;
@@ -516,19 +585,25 @@ void pagamento(struct gancho *g, char *ativo, char *data, float valor, char dig,
 		printf("\nreferencia vazia ou nulla ]] funçao pagamento\n");
 	}else{
 		while(a != NULL){
-			res = verificar(ativo,(*a).nomea);
+			res = verificar((*a).nomea,ativo);
 			if(res == 1){
-				printf("\nAchou o ATIVO\n");
 				res = 0;
 				investidor = (*a).iprox;
 				 while(investidor != NULL){
 					 c = (*investidor).ref_cprox;
+					 guia = NULL;
 					 while(c != NULL){
 						 if((*c).id <= data_com){
-							 proventos__atual(g,(*investidor).nome,ativo,data,valor,dig,(*c).qnt,taxa);
-						 }else{
-							 c = (*c).prox;
+						 	 guia = c;
+						 	 break;
 						 }
+							 c = (*c).prox;
+					 }
+					 
+					 if(guia!= NULL){
+						c = guia;
+						printf(">>>%i",(*c).qnt_final);
+						proventos__atual(g,(*investidor).nome,ativo,data_pag,valor,dig,(*c).qnt_final,taxa); 
 					 }					 
 					 investidor = (*investidor).ref_iprox;
 				 }
@@ -606,7 +681,7 @@ void data_(char *mes, int *codigo){
 
 void tamanho_mes(char datI[],int *mes, int *tam){
 	int ind = 3;
-		 
+ 
 	if(datI[ind] == 'j'){
 		if(datI[ind+1] == 'a'){
 			*mes = 1;
@@ -655,7 +730,7 @@ void tamanho_mes(char datI[],int *mes, int *tam){
 									*tam = 8;
 								}
 								else{
-									printf("Não enontrado");
+									printf("Não encontrado o mês\n");
 								}
 							}
 						}
@@ -724,11 +799,9 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 	struct acoes *a;
 	struct investidor *in;
 	struct dataCom *c;
-	
 	struct ref_ativo *refa;
 	struct ref_investidor *refi;
-	struct ref_compra *atual, *temp;
-	
+		
 	int id = 0;
 	data_(data,&id);
 	
@@ -752,46 +825,18 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 		string((*refa).nomea,ativo,7); // cuidado aqui, é o nome do ativo!!  *ativo vindo la como parametro
 		if((*refa).iprox == NULL){
 			(*refa).iprox = (struct ref_investidor*)malloc(sizeof(struct ref_investidor));
-			refi = (*refa).iprox;
+			refi = (*refa).iprox; 
 			iniciar_ref_investidor(refi); 
 			string((*refi).nome,nome,10); // nome do investidor, vindo la como parametro
-			
-			if((*refi).ref_cprox == NULL){
-				(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-				atual = (*refi).ref_cprox;
-				iniciar_ref_compra(atual); 
-				(*atual).id = id;
-				(*atual).qnt = qnt;
-			}else{
-				temp = (*refi).ref_cprox;
-				(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-				atual = (*refi).ref_cprox;
-				iniciar_ref_compra(atual); 
-				(*atual).id = id;
-				(*atual).qnt = qnt;
-				(*atual).prox = temp;  //aponta para o antigo primeiro elemento
-			}	
+			rotina(refi,id,qnt);
+				
 		}else{
 			refi = (*refa).iprox;
 			while(refi!=NULL){
 				res = 0;
 				res = verificar((*refi).nome,nome); // O nome do investidor e igual ao nome do investidor passado por parametro?
 				if(res==1){
-					if((*refi).ref_cprox == NULL){
-						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-						atual = (*refi).ref_cprox;
-						iniciar_ref_compra(atual);
-						(*atual).id = id;
-						(*atual).qnt = qnt;
-					}else{
-						temp = (*refi).ref_cprox;
-						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-						atual = (*refi).ref_cprox;
-						iniciar_ref_compra(atual); 
-						(*atual).id = id;
-						(*atual).qnt = qnt;
-						(*atual).prox = temp;  
-					}
+					rotina(refi,id,qnt);
 					break;
 				}else{
 					if((*refi).ref_iprox == NULL){
@@ -799,22 +844,7 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 						refi = (*refi).ref_iprox;
 						iniciar_ref_investidor(refi); 
 						string((*refi).nome,nome,10);
-						if((*refi).ref_cprox == NULL){
-							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-							
-							atual = (*refi).ref_cprox;
-							iniciar_ref_compra(atual); 
-							(*atual).id = id;
-							(*atual).qnt = qnt;
-						}else{
-							temp = (*refi).ref_cprox;
-							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-							atual = (*refi).ref_cprox;
-							iniciar_ref_compra(atual); 
-							(*atual).id = id;
-							(*atual).qnt = qnt;
-							(*atual).prox = temp;  
-						}
+						rotina(refi,id,qnt);
 						break;
 					}
 					refi = (*refi).ref_iprox;
@@ -832,21 +862,7 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 				res = 0;
 				res = verificar((*refi).nome,nome); // O nome do investidor e igual ao nome do investidor passado por parametro?
 				if(res==1){ // sim, entao acrescenta dados
-					if((*refi).ref_cprox == NULL){
-						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-						atual = (*refi).ref_cprox;
-						iniciar_ref_compra(atual);
-						(*atual).id = id;
-						(*atual).qnt = qnt;
-					}else{ 
-						temp = (*refi).ref_cprox;
-						(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-						atual = (*refi).ref_cprox;
-						iniciar_ref_compra(atual); 
-						(*atual).id = id;
-						(*atual).qnt = qnt;
-						(*atual).prox = temp;  
-					}
+					rotina(refi,id,qnt);
 					break;
 				}else{ // não, entao ele procura se o proximo e nulo
 					if((*refi).ref_iprox == NULL){ // próximo e nullo, então cria novo nó
@@ -854,27 +870,12 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 						refi = (*refi).ref_iprox;
 						iniciar_ref_investidor(refi); 
 						string((*refi).nome,nome,10);
-						if((*refi).ref_cprox == NULL){
-							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-							atual = (*refi).ref_cprox;
-							iniciar_ref_compra(atual); 
-							(*atual).id = id;
-							(*atual).qnt = qnt;
-						}else{
-							temp = (*refi).ref_cprox;
-							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-							atual = (*refi).ref_cprox;
-							iniciar_ref_compra(atual); 
-							(*atual).id = id;
-							(*atual).qnt = qnt;
-							(*atual).prox = temp;  
-						}
+						rotina(refi,id,qnt);
 						break;
 					} // proximo não e nulo entao procura o novo nó,  não vejo motivos para usar o else aqui, acima ja pararia o while
 					refi = (*refi).ref_iprox;
 				}
 			}
-
 				break;
 			}else{ // antes de ir para o proximo, verifica se o proximo existe, porque se nao tiver precisa criar antes de pular para o proximo
 				if((*refa).aprox == NULL){ //4° diferente e não tem próximo, cria
@@ -888,22 +889,7 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 						refi = (*refa).iprox;
 						iniciar_ref_investidor(refi); 
 						string((*refi).nome,nome,10); // nome do investidor, vindo la como parametro
-						
-						if((*refi).ref_cprox == NULL){
-							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-							atual = (*refi).ref_cprox;
-							iniciar_ref_compra(atual); 
-							(*atual).id = id;
-							(*atual).qnt = qnt;
-						}else{
-							temp = (*refi).ref_cprox;
-							(*refi).ref_cprox = (struct ref_compra*)malloc(sizeof(struct ref_compra));
-							atual = (*refi).ref_cprox;
-							iniciar_ref_compra(atual); 
-							(*atual).id = id;
-							(*atual).qnt = qnt;
-							(*atual).prox = temp;  //aponta para o antigo primeiro elemento
-						}
+						rotina(refi,id,qnt);
 						break;
 					}else{
 						printf("\nDeveria ser nullo\n");
@@ -914,10 +900,7 @@ void investimento_atual(struct gancho *g,char *nome, int qnt, char *ativo, float
 		}
 		
 	}
-	
-	
 	res = 0;
-	
 	
 	if((*g).c==NULL){
 		(*g).c = (struct dataCom*)malloc(sizeof(struct dataCom));
@@ -1315,156 +1298,90 @@ int verificar(char *prim, const char *seg){  //recebe duas strings e verifica se
     return 0; // Uma é maior que a outra
 }
 
-void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nome_ativo, float preco, char *data ,float tx){ //falta teste ao adicionar a data
-	struct acoes *a; //6
+void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nome_ativo, float preco, char *data, float tx){
+	struct ref_ativo *refa;
+	struct ref_investidor *refi;
+	int id_venda = 0;
+	int res = 0;
+	
+	// 1. Converte a data para ID inteiro
+	data_(data, &id_venda);
+	
+	// 2. Navega na nova estrutura (Ativo -> Investidor) para atualizar a quantidade (qnt_final)
+	refa = (*g).a;
+	if(refa == NULL){
+		printf("\n[ERRO] Nao existem ativos cadastrados!\n");
+		return;
+	}
+	
+	int atualizou_saldo = 0;
+	while(refa != NULL){
+		res = verificar((*refa).nomea, nome_ativo);
+		if(res == 1){
+			refi = (*refa).iprox;
+			while(refi != NULL){
+				res = verificar((*refi).nome, nome_investidor);
+				if(res == 1){
+					// Chama a rotina que subtrai o saldo e empilha o novo nó com o qnt_final atualizado
+					rotina_venda(refi, id_venda, qnt);
+					atualizou_saldo = 1;
+					break;
+				}
+				refi = (*refi).ref_iprox;
+			}
+			break;
+		}
+		refa = (*refa).aprox;
+	}
+	
+	if(!atualizou_saldo){
+		printf("\n[AVISO] Ativo ou Investidor nao encontrado na estrutura nova para atualizar o saldo.\n");
+	}
+
+	// 3. Mantém EXATAMENTE a sua lógica original de salvar o registro global de vendas (*g).v
 	struct dataCom *r;
-	struct investidor *i;
-	//struct compras *c;
-	float media = 0;
-	int res;
 	
 	if((*g).v == NULL){
 		(*g).v = (struct dataCom*)malloc(sizeof(struct dataCom));
 		r = (*g).v;
-	}else{
+		iniciarDataCom(r); // Garante que limpa o lixo de memória se você tiver essa função
+	} else {
 		r = (*g).v;
 	}
 	
-	if((*g).i==NULL){
-		printf("(*g).i==NULL");
-	}else{
-		i = (*g).i;
+	if((*r).data[0] == '\0'){ // não existe, cria o primeiro
+		string((*r).data, data, 20);
+		string((*r).nome, nome_investidor, 10);
+		string((*r).ativo, nome_ativo, 7);
+		(*g).vendas++;
+		(*r).id = id_venda;
+		(*r).preco = preco;
+		(*r).media = 0; // Se quiser calcular a média depois, pode ajustar aqui
+		(*r).qnt = qnt;
+		(*r).prox = NULL;
+	} else {
+		do {
+			if((*r).prox == NULL){ // próximo é nulo?
+				(*r).prox = (struct dataCom*)malloc(sizeof(struct dataCom));
+				r = (*r).prox;
+				iniciarDataCom(r);
+				string((*r).data, data, 20);
+				string((*r).nome, nome_investidor, 10);
+				string((*r).ativo, nome_ativo, 7);
+				(*g).vendas++;
+				(*r).id = id_venda;
+				(*r).preco = preco;
+				(*r).media = 0;
+				(*r).qnt = qnt;
+				(*r).prox = NULL;
+				break;
+			}
+			r = (*r).prox;
+		} while(1);
 	}
 	
-	if((*i).nome[0] == '\0'){
-		printf("\nERRO, Não existe investidores [%s]",nome_investidor); //1
-	}else{
-		do{ //repetição até "break"  busca o investidor
-			res = verificar((*i).nome,nome_investidor); //2
-			if(res ==1){
-				a =(*i).aprox; //5
-				do{ // busca o ativo!!
-					res = verificar((*a).ativo,nome_ativo); //4
-					if(res==1){
-						if(qnt > (*a).qnt){
-							printf("\nNão tem como vender %i ativos da [%s] pois só existem %i ativos!!\n",qnt,nome_ativo,(*a).qnt);
-							system("pause");
-							break;
-						}else{
-							if((*a).media < preco){ //lucro
-								(*i).lucro += (qnt * preco) - ((*a).media * qnt); 
-							}else{ //perda
-								(*i).perda += (qnt * preco) - ((*a).media * qnt); 
-							}
-						media = (*a).media;	
-						(*i).valor -= (media * qnt);
-						(*i).valorDoanoatual -= (media * qnt);
-						//if((*i).valorDoanoatual <0) (*i).valorDoanoatual = 0;
-						//aqui deveria ter um if, caso valor menor que zero(negativo)
-						(*a).compranova -= (preco * qnt);//aqui/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-						(*a).qnt = (*a).qnt - qnt;
-						(*a).nova -= qnt;
-						(*a).venda += qnt;
-						
-						
-						/*
-						if((*a).compras_prox == NULL){
-							(*a).compras_prox = malloc(sizeof(struct compras)); ****
-							c = (*a).compras_prox;
-							iniciar_compras(c);
-							data_(data,&(*c).id);
-							printf("%i\n",(*c).id);
-							(*c).qnt = qnt;
-							(*c).qnt_final -= qnt;
-							//printf("\n %i",(*c).qnt_final);
-						}else{
-							struct compras *temp;
-							temp = (*a).compras_prox;
-							(*a).compras_prox = malloc(sizeof(struct compras));
-							c = (*a).compras_prox;
-							iniciar_compras(c);
-							data_(data,&(*c).id);
-							printf("%i\n",(*c).id);
-							(*c).qnt = qnt;
-							(*c).qnt_final -= qnt;
-							(*a).compras_prox = temp;
-							//printf("\n %i",(*c).qnt_final);
-						}	
-						*/
-						
-						
-						
-						
-						if((*a).nova < 0) (*a).nova = 0;
-						(*a).valorinvest = (*a).valorinvest - (media * qnt);
-						(*a).taxa += tx;
-						if((*a).qnt > 0){
-							(*a).media = (*a).valorinvest / (*a).qnt;
-						}else{
-							(*a).valorinvest = 0;
-						}
-						//corrigirSaldo(g,nome_investidor,((preco * qnt)-tx));
-						 if((*a).qnt == 0){ //9
-							 //(*a).media = 0; //qnt / (*a).valorinvest;
-						 }
-						if((*a).qnt < 0){//8 esse aqui tem que ser antes das alteraçoes, não? (*i).valor -= (preco * qnt);
-							printf("\n [erro] quantidade não pode ser um número negativo!!\n");
-						}
-						if((*r).data[0] == '\0'){ //nao existe cria o primeiro
-							string((*r).data,data,20);
-							string((*r).nome,nome_investidor,10);
-							string((*r).ativo,nome_ativo,7);
-							(*g).vendas++;
-							data_(data,&(*r).id);
-							(*r).preco = preco;
-							(*r).media = media;
-							(*r).qnt = qnt;
-							(*r).prox = NULL;
-						}else{
-							do{
-							if((*r).prox == NULL){  //proximo é nullo?
-								(*r).prox = (struct dataCom*)malloc(sizeof(struct dataCom));
-								r = (*r).prox;
-								iniciarDataCom(r);
-								string((*r).data,data,20);
-								string((*r).nome,nome_investidor,10);
-								string((*r).ativo,nome_ativo,7);
-								(*g).vendas++;
-								data_(data,&(*r).id);
-								(*r).preco = preco;
-								(*r).media = media;
-								(*r).qnt = qnt;
-								(*r).total = (*a).qnt; //****
-								(*r).prox = NULL;
-								break;
-							}
-							r =(*r).prox;
-							}while(1);
-						}
-						}
-					break;
-						
-					}else{
-						if((*a).prox==NULL){
-							printf("\nAtivo não esta inserido!! [%s]",nome_ativo);
-							break;
-						}else{
-							a = (*a).prox;
-						}
-					}
-				}while(1);				
-				break;
-			}else{
-				if((*i).prox == NULL){ //3
-					printf("\nInvestidor não encontrado!!!!! [%s]",nome_investidor);
-					break;
-				}else{
-					i = (*i).prox;
-				}
-			}
-		}while(1);
-	}
-};
+	printf("\nVenda registrada com sucesso!\n");
+}
 
 
 void calculo(int codigo_data,char *data,float *valorp,char dig,int qnt, float IR){
@@ -2458,7 +2375,10 @@ void Compra2025(struct gancho *g){
 	investimento_atual(g,"Gilmar",50,"PETR4",32.90,"08/abril/2025",0.54);
 	investimento_atual(g,"Eliana",64,"PETR4",30.95,"19/abril/2025",0.54);  // (1.974,4)
 	investimento_atual(g,"Eliana",32,"PETR4",30.57,"24/abril/2025",0.32);  //(978,24)
+	
 	investimento_atual(g,"Eliana",37,"BBAS3",27.50,"24/abril/2025",0.33); // (1.017,5)
+	
+
 	investimento_atual(g,"Gilmar",26,"CXCE11",39.00,"24/maio/2025",0.33);
 	investimento_atual(g,"Gilmar",150,"RZAG11",8.93,"30/maio/2025",0.44);
 	investimento_atual(g,"Gilmar",150,"XPCA11",7.81,"30/maio/2025",0.39);
@@ -2514,8 +2434,10 @@ void Compra2025(struct gancho *g){
 	investimento_atual(g,"Gilmar",40,"CXSE3",14.43,"15/julho/2025",0.19);
 	reinvestimento(g,"Gilmar",10,"KLBN4",3.83,"15/julho/2025",0.02);
 	investimento_atual(g,"Gilmar",71,"BMGB4",3.74,"16/julho/2025",0.09); 
-	transferencia(g,"Eliana","BBAS3",12,"Gilmar");// Gilmar comprou de eliana 12 ações por 27,50 cada cota 06/08/25 (330,00)
-	corrigirSaldo(g,"Eliana",-330);
+
+	adicionarVendas(g,"Eliana",12,"BBAS3",27.50,"06/agosto/2025",00);
+	investimento_atual(g,"Gilmar",12,"BBAS3",27.50,"06/agosto/2025",00);
+	
 	investimento_atual(g,"Eliana",40,"RURA11",8.13,"06/agosto/2025",0.11);
 	investimento_atual(g,"Gilmar",30,"KLBN4",3.61,"06/agosto/2025",0.04);
 	investimento_atual(g,"Gilmar",5,"BBAS3",18.76,"06/agosto/2025",0.04);
@@ -2579,7 +2501,8 @@ void Compra2025(struct gancho *g){
 	investimento_atual(g,"Gilmar",10,"CMIG4",11.06,"19/dezembro/2025",0.04);
 	investimento_atual(g,"Gilmar",2,"DIRR3",13.99,"19/dezembro/2025",0.01);
 	investimento_atual(g,"Gilmar",3,"KLBN4",3.72,"19/dezembro/2025",0.01);
-	bonus(g,"Gilmar",28,"KLBN4","19/dezembro/2025");
+	//bonus(g,"Gilmar",28,"KLBN4","19/dezembro/2025");
+	investimento_atual(g,"Gilmar",28,"KLBN4",0,"19/dezembro/2025",0.0);
 	reinvestimento(g,"Gilmar",20,"CMIG4",11.13,"23/dezembro/2025",0.08);
 	reinvestimento(g,"Gilmar",3,"DIRR3",13.72,"23/dezembro/2025",0.02);
 	reinvestimento(g,"Gilmar",4,"BBAS3",21.61,"23/dezembro/2025",0.03);
@@ -2723,7 +2646,6 @@ void Compra2026(struct gancho *g){
 	reinvestimento(g,"Gilmar",10,"SPXB11",17.82,"28/setembro/2026",0.06);
 	reinvestimento(g,"Gilmar",10,"SAPR4",6.58,"28/setembro/2026",0.03);
 	reinvestimento(g,"Gilmar",6,"PORD11",8.38,"30/setembro/2026",0.02);
-	
 	reinvestimento(g,"Gilmar",2,"KLBN4",3.61,"01/outubro/2026",0.01);
 	investimento_atual(g,"Gilmar",5,"RECR11",76.19,"06/outubro/2026",0.13);
 	investimento_atual(g,"Gilmar",25,"SNEL11",7.96,"06/outubro/2026",0.07);
@@ -2762,7 +2684,6 @@ void Compra2026(struct gancho *g){
 	investimento_atual(g,"Gilmar",2,"KLBN4",3.51,"29/outubro/2026",0.01);
 	adicionarVendas(g,"Gilmar",2,"FLRY3",20.92,"29/outubro/2026",0.02);
 	investimento_atual(g,"Gilmar",5,"GARE11",8.17,"30/outubro/2026",0.02);
-	
 	
 	Proventos2026(g);
 	}
@@ -3239,10 +3160,21 @@ void Proventos2026(struct gancho *g){
 	proventos_atual(g,"Gilmar","XPCA11","15/setembro/2026",0.10000000,'r',200);            //////////
 	proventos_atual(g,"Gilmar","RZAG11","15/setembro/2026",0.12500000,'r',262);            /////////
 	proventos_atual(g,"Gilmar","RBRR11","17/setembro/2026",0.9,'D',10);
-	proventos__atual(g,"Gilmar","PETR4","21/setembro/2026",0.35048636,'J',735,0.175);
-	proventos__atual(g,"Getúlio","PETR4","21/setembro/2026",0.35048636,'J',67,0.175); //pg
-	proventos__atual(g,"Eliana","PETR4","21/setembro/2026",0.35048636,'J',182,0.175); //pg
-	proventos_atual(g,"Gilmar","SNEL11","24/agosto/2026",0.10,'R',500);
+	
+	
+	
+	
+	
+	//proventos__atual(g,"Gilmar","PETR4","21/setembro/2026",0.35048636,'J',735,0.175);
+	//proventos__atual(g,"Getúlio","PETR4","21/setembro/2026",0.35048636,'J',67,0.175); //pg
+	//proventos__atual(g,"Eliana","PETR4","21/setembro/2026",0.35048636,'J',182,0.175); //pg
+	pagamento(g,"PETR4","01/junho/2026","21/setembro/2026",0.35048636,'j',0.175);
+	//proventos_atual(g,"Gilmar","SNEL11","24/agosto/2026",0.10,'R',500);
+	pagamento(g,"SNEL11","30/julho/2026","24/agosto/2026",0.10,'R',0);
+	
+	
+	
+	
 	//proventos_atual(g,"NAN","SNEL11","24/setembro/2026",0.10,'R',80);
 	proventos__atual(g,"Gilmar","BBDC3","31/setembro/2026",0.35119075,'J',50,0.175);
 	
