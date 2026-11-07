@@ -292,7 +292,7 @@ int main(){
 	*/
 	
 	//printf();
-	//mostrar(atualg,datU);
+	mostrar(atualg,datU);
 	
 	printf("\n\n%i investidores\n%i compras\n%i vendas\n%i recibos\n\n",(*atualg).investidores,(*atualg).compras,(*atualg).vendas,(*atualg).recibos);
 	
@@ -321,8 +321,8 @@ int main(){
 	}
 	}while(1);
 	*/
-	escreverdados_dividendos(atualg);
-
+	//escreverdados_dividendos(atualg);
+//escreverdados_vendas(atualg);
 	//arquivo_bin(atualg);
 	//mostrarhtml(atualg,datU);
 	//mostrar(atualg,datU);
@@ -575,7 +575,7 @@ void pagamento(struct gancho *g, char *ativo, char *data, char *data_pag, float 
 	
 	data_(data,&data_com);
 	
-	printf("\n%i\n",data_com);
+	//printf("\n%i\n",data_com);
 	//struct compras *compras;
 	
 	a = (*g).a;
@@ -602,7 +602,7 @@ void pagamento(struct gancho *g, char *ativo, char *data, char *data_pag, float 
 					 
 					 if(guia!= NULL){
 						c = guia;
-						printf(">>>%i",(*c).qnt_final);
+						//printf(">>>%i",(*c).qnt_final);
 						proventos__atual(g,(*investidor).nome,ativo,data_pag,valor,dig,(*c).qnt_final,taxa); 
 					 }					 
 					 investidor = (*investidor).ref_iprox;
@@ -1304,6 +1304,13 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 	int id_venda = 0;
 	int res = 0;
 	
+	struct acoes *a; //6
+	struct dataCom *r;
+	struct investidor *i;
+	float media = 0;
+
+	
+	
 	// 1. Converte a data para ID inteiro
 	data_(data, &id_venda);
 	
@@ -1339,7 +1346,6 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 	}
 
 	// 3. Mantém EXATAMENTE a sua lógica original de salvar o registro global de vendas (*g).v
-	struct dataCom *r;
 	
 	if((*g).v == NULL){
 		(*g).v = (struct dataCom*)malloc(sizeof(struct dataCom));
@@ -1349,6 +1355,111 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 		r = (*g).v;
 	}
 	
+	if((*g).i==NULL){
+		printf("(*g).i==NULL");
+	}else{
+		i = (*g).i;
+	}
+	res = 0;
+	if((*i).nome[0] == '\0'){
+		printf("\nERRO, Não existe investidores [%s]",nome_investidor); //1
+	}else{
+		do{ //repetição até "break"  busca o investidor
+			res = verificar((*i).nome,nome_investidor); //2
+			if(res ==1){
+				a =(*i).aprox; //5
+				do{ // busca o ativo!!
+					res = verificar((*a).ativo,nome_ativo); //4
+					if(res==1){
+						if(qnt > (*a).qnt){
+							printf("\nNão tem como vender %i ativos da [%s] pois só existem %i ativos!!\n",qnt,nome_ativo,(*a).qnt);
+							system("pause");
+							break;
+						}else{
+							if((*a).media < preco){ //lucro
+								(*i).lucro += (qnt * preco) - ((*a).media * qnt); 
+							}else{ //perda
+								(*i).perda += (qnt * preco) - ((*a).media * qnt); 
+							}
+						media = (*a).media;	
+						(*i).valor -= (media * qnt);
+						(*i).valorDoanoatual -= (media * qnt);
+						if((*i).valorDoanoatual <0) (*i).valorDoanoatual = 0;
+						//aqui deveria ter um if, caso valor menor que zero(negativo)
+						(*a).compranova -= (preco * qnt);//aqui/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+						(*a).qnt = (*a).qnt - qnt;
+						(*a).nova -= qnt;
+						(*a).venda += qnt;
+						if((*a).nova < 0) (*a).nova = 0;
+						(*a).valorinvest = (*a).valorinvest - (media * qnt);
+						(*a).taxa += tx;
+						if((*a).qnt > 0){
+							(*a).media = (*a).valorinvest / (*a).qnt;
+						}else{
+							(*a).valorinvest = 0;
+						}
+						
+						
+						//corrigirSaldo(g,nome_investidor,((preco * qnt)-tx));
+						 if((*a).qnt == 0){ //9
+							 (*a).media = 0; //qnt / (*a).valorinvest;
+						 }
+						if((*a).qnt < 0){//8 esse aqui tem que ser antes das alteraçoes, não? (*i).valor -= (preco * qnt);
+							printf("\n [erro] quantidade não pode ser um número negativo!!\n");
+						}
+						if((*r).data[0] == '\0'){ //nao existe cria o primeiro
+							string((*r).data,data,20);
+							string((*r).nome,nome_investidor,10);
+							string((*r).ativo,nome_ativo,7);
+							(*r).preco = preco;
+							(*r).media = media;
+							(*r).qnt = qnt;
+							(*r).prox = NULL;
+						}else{
+							do{
+							if((*r).prox == NULL){  //proximo é nullo?
+								(*r).prox = (struct dataCom*)malloc(sizeof(struct dataCom));
+								r = (*r).prox;
+								iniciarDataCom(r);
+								string((*r).data,data,20);
+								string((*r).nome,nome_investidor,10);
+								string((*r).ativo,nome_ativo,7);
+								(*r).preco = preco;
+								(*r).media = media;
+								(*r).qnt = qnt;
+								(*r).prox = NULL;
+								break;
+							}
+							r =(*r).prox;
+							}while(1);
+						}
+						}
+					break;
+						
+					}else{
+						if((*a).prox==NULL){
+							printf("\nAtivo não esta inserido!! [%s]",nome_ativo);
+							break;
+						}else{
+							a = (*a).prox;
+						}
+					}
+				}while(1);				
+				break;
+			}else{
+				if((*i).prox == NULL){ //3
+					printf("\nInvestidor não encontrado!!!!! [%s]",nome_investidor);
+					break;
+				}else{
+					i = (*i).prox;
+				}
+			}
+		}while(1);
+	}
+						
+						
+						
+						
 	if((*r).data[0] == '\0'){ // não existe, cria o primeiro
 		string((*r).data, data, 20);
 		string((*r).nome, nome_investidor, 10);
@@ -1380,7 +1491,7 @@ void adicionarVendas(struct gancho *g, char *nome_investidor, int qnt, char *nom
 		} while(1);
 	}
 	
-	printf("\nVenda registrada com sucesso!\n");
+	//printf("\nVenda registrada com sucesso!\n");
 }
 
 
@@ -2685,6 +2796,16 @@ void Compra2026(struct gancho *g){
 	adicionarVendas(g,"Gilmar",2,"FLRY3",20.92,"29/outubro/2026",0.02);
 	investimento_atual(g,"Gilmar",5,"GARE11",8.17,"30/outubro/2026",0.02);
 	
+	investimento_atual(g,"Gilmar",6,"SNEL11",7.49,"04/novembro/2026",0.02);
+	investimento_atual(g,"Gilmar",5,"RECR11",71.90,"06/novembro/2026",0.12);
+	investimento_atual(g,"Gilmar",1,"LFTB11",128.36,"06/novembro/2026",0.05);
+	investimento_atual(g,"Gilmar",10,"BBDC3",12.84,"06/novembro/2026",0.05);
+	investimento_atual(g,"Gilmar",3,"PCIP11",68.00,"06/novembro/2026",0.07);
+	investimento_atual(g,"Gilmar",8,"SNEL11",7.66,"06/novembro/2026",0.02);
+	investimento_atual(g,"Gilmar",1,"HGLG11",146.85,"06/novembro/2026",0.05);
+	investimento_atual(g,"Gilmar",10,"BBAS3",16.52,"06/novembro/2026",0.06);
+	investimento_atual(g,"Gilmar",15,"GARE11",8.21,"06/novembro/2026",0.04);
+	investimento_atual(g,"Gilmar",4,"KLBN4",3.49,"06/novembro/2026",0.01);
 	Proventos2026(g);
 	}
 	
